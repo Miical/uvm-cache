@@ -29,8 +29,9 @@ task bus_driver::main_phase(uvm_phase phase);
 
     for (int i = 0; i < 16; i++) begin
         tr = new("tr");
-        tr.randomize();
+        assert(tr.randomize() with { is_inreq == 1; is_upstream == 1; });
         `uvm_info("bus_driver", $sformatf("addr = %x", tr.req_bits_addr), UVM_LOW)
+        tr.print();
         drive_one_pkt(tr);
     end
 
