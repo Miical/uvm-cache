@@ -1,5 +1,6 @@
 `ifndef BUS_DRIVER__SV
 `define BUS_DRIVER__SV
+
 class bus_driver extends uvm_driver#(bus_seq_item);
 
     virtual simplebus_if bif;

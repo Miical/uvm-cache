@@ -6,6 +6,8 @@ import uvm_pkg::*;
 `include "src/simplebus_if.sv"
 `include "src/bus_seq_item.sv"
 `include "src/components/bus_driver.sv"
+`include "src/components/bus_monitor.sv"
+`include "src/components/cache_env.sv"
 
 module top_tb;
 
@@ -75,7 +77,7 @@ Cache cache(.clock(clk),
             .io_mmio_resp_bits_rdata(mmio_if.resp_bits_rdata));
 
 initial begin
-    run_test("bus_driver");
+    run_test("cache_env");
     $finish();
 end
 
@@ -93,8 +95,8 @@ initial begin
  end
 
  initial begin
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top", "bif", in_if);
-
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.drv", "bif", in_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.mon", "bif", in_if);
  end
 
 endmodule
