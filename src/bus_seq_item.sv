@@ -20,9 +20,32 @@ class bus_seq_item extends uvm_sequence_item;
     rand bit [63:0] resp_bits_rdata;
     rand bit [15:0] resp_bits_user;
 
-    rand bit        is_inreq;    // Whether to input to the bus.
-    rand bit        is_upstream; // Whether to interact with upstream.
+    rand bit        is_req;    // Whether to input to the bus.
 
+    `uvm_object_utils_begin(bus_seq_item)
+        if (is_req) begin
+            `uvm_field_int(req_bits_user, UVM_ALL_ON)
+            `uvm_field_int(io_flush, UVM_ALL_ON)
+            `uvm_field_int(resp_ready, UVM_ALL_ON)
+            `uvm_field_int(req_valid, UVM_ALL_ON)
+            `uvm_field_int(req_bits_addr, UVM_ALL_ON)
+            `uvm_field_int(req_bits_size, UVM_ALL_ON)
+            `uvm_field_int(req_bits_cmd, UVM_ALL_ON)
+            `uvm_field_int(req_bits_wmask, UVM_ALL_ON)
+            `uvm_field_int(req_bits_wdata, UVM_ALL_ON)
+        end
+        else begin
+            `uvm_field_int(resp_bits_user, UVM_ALL_ON)
+            `uvm_field_int(io_empty, UVM_ALL_ON)
+            `uvm_field_int(req_ready, UVM_ALL_ON)
+            `uvm_field_int(resp_valid, UVM_ALL_ON)
+            `uvm_field_int(resp_bits_cmd, UVM_ALL_ON)
+            `uvm_field_int(resp_bits_rdata, UVM_ALL_ON)
+        end
+        `uvm_field_int(is_req, UVM_NOPACK)
+    `uvm_object_utils_end
+
+    /*
     `uvm_object_utils_begin(bus_seq_item)
         if (is_inreq) begin
             if (is_upstream) begin
@@ -50,6 +73,7 @@ class bus_seq_item extends uvm_sequence_item;
         `uvm_field_int(is_inreq, UVM_NOPACK)
         `uvm_field_int(is_upstream, UVM_ALL_ON | UVM_NOPACK)
     `uvm_object_utils_end
+    */
 
     function new(string name = "bus_seq_item");
         super.new();
