@@ -1,6 +1,4 @@
 module CacheStage1(
-  input         clock,
-  input         reset,
   output        io_in_ready,
   input         io_in_valid,
   input  [31:0] io_in_bits_addr,
@@ -40,7 +38,6 @@ module CacheStage1(
   input  [63:0] io_dataReadBus_resp_data_2_data,
   input  [63:0] io_dataReadBus_resp_data_3_data
 );
-  wire  _T = io_in_ready & io_in_valid; // @[Decoupled.scala 51:35]
   wire  _io_in_ready_T_1 = io_out_ready & io_out_valid; // @[Decoupled.scala 51:35]
   assign io_in_ready = (~io_in_valid | _io_in_ready_T_1) & io_metaReadBus_req_ready & io_dataReadBus_req_ready; // @[Cache.scala 145:76]
   assign io_out_valid = io_in_valid & io_metaReadBus_req_ready & io_dataReadBus_req_ready; // @[Cache.scala 144:59]
@@ -54,31 +51,6 @@ module CacheStage1(
   assign io_metaReadBus_req_bits_setIdx = io_in_bits_addr[12:6]; // @[Cache.scala 77:45]
   assign io_dataReadBus_req_valid = io_in_valid & io_out_ready; // @[Cache.scala 139:34]
   assign io_dataReadBus_req_bits_setIdx = {io_in_bits_addr[12:6],io_in_bits_addr[5:3]}; // @[Cat.scala 33:92]
-  always @(posedge clock) begin
-    `ifndef SYNTHESIS
-    `ifdef PRINTF_COND
-      if (`PRINTF_COND) begin
-    `endif
-        if (_T & ~reset & ~(~io_in_bits_cmd[0])) begin
-          $fwrite(32'h80000002,
-            "Assertion failed\n    at Cache.scala:135 if (ro) when (io.in.fire) { assert(!io.in.bits.isWrite()) }\n"); // @[Cache.scala 135:37]
-        end
-    `ifdef PRINTF_COND
-      end
-    `endif
-    `endif // SYNTHESIS
-    `ifndef SYNTHESIS
-    `ifdef STOP_COND
-      if (`STOP_COND) begin
-    `endif
-        if (~(~io_in_bits_cmd[0]) & (_T & ~reset)) begin
-          $fatal; // @[Cache.scala 135:37]
-        end
-    `ifdef STOP_COND
-      end
-    `endif
-    `endif // SYNTHESIS
-  end
 endmodule
 module CacheStage2(
   input         clock,
@@ -136,6 +108,7 @@ module CacheStage2(
   input         io_metaWriteBus_req_valid,
   input  [6:0]  io_metaWriteBus_req_bits_setIdx,
   input  [18:0] io_metaWriteBus_req_bits_data_tag,
+  input         io_metaWriteBus_req_bits_data_dirty,
   input  [3:0]  io_metaWriteBus_req_bits_waymask,
   input         io_dataWriteBus_req_valid,
   input  [9:0]  io_dataWriteBus_req_bits_setIdx,
@@ -146,10 +119,11 @@ module CacheStage2(
   reg [31:0] _RAND_0;
   reg [31:0] _RAND_1;
   reg [31:0] _RAND_2;
-  reg [63:0] _RAND_3;
-  reg [31:0] _RAND_4;
-  reg [63:0] _RAND_5;
-  reg [31:0] _RAND_6;
+  reg [31:0] _RAND_3;
+  reg [63:0] _RAND_4;
+  reg [31:0] _RAND_5;
+  reg [63:0] _RAND_6;
+  reg [31:0] _RAND_7;
 `endif // RANDOMIZE_REG_INIT
   wire [2:0] addr_wordIndex = io_in_bits_req_addr[5:3]; // @[Cache.scala 174:31]
   wire [6:0] addr_index = io_in_bits_req_addr[12:6]; // @[Cache.scala 174:31]
@@ -161,8 +135,10 @@ module CacheStage2(
   wire  _T_1 = ~io_in_valid; // @[Cache.scala 179:23]
   wire  _T_2 = _T | ~io_in_valid; // @[Cache.scala 179:20]
   reg [18:0] forwardMetaReg_data_tag; // @[Reg.scala 19:16]
+  reg  forwardMetaReg_data_dirty; // @[Reg.scala 19:16]
   reg [3:0] forwardMetaReg_waymask; // @[Reg.scala 19:16]
   wire [18:0] _GEN_3 = isForwardMeta ? io_metaWriteBus_req_bits_data_tag : forwardMetaReg_data_tag; // @[Reg.scala 19:16 20:{18,22}]
+  wire  _GEN_5 = isForwardMeta ? io_metaWriteBus_req_bits_data_dirty : forwardMetaReg_data_dirty; // @[Reg.scala 19:16 20:{18,22}]
   wire [3:0] _GEN_6 = isForwardMeta ? io_metaWriteBus_req_bits_waymask : forwardMetaReg_waymask; // @[Reg.scala 19:16 20:{18,22}]
   wire  pickForwardMeta = isForwardMetaReg | isForwardMeta; // @[Cache.scala 183:42]
   wire  forwardWaymask_0 = _GEN_6[0]; // @[Cache.scala 185:61]
@@ -224,13 +200,13 @@ module CacheStage2(
   assign io_out_bits_req_wdata = io_in_bits_req_wdata; // @[Cache.scala 226:19]
   assign io_out_bits_req_user = io_in_bits_req_user; // @[Cache.scala 226:19]
   assign io_out_bits_metas_0_tag = pickForwardMeta & forwardWaymask_0 ? _GEN_3 : io_metaReadResp_0_tag; // @[Cache.scala 187:22]
-  assign io_out_bits_metas_0_dirty = pickForwardMeta & forwardWaymask_0 ? 1'h0 : io_metaReadResp_0_dirty; // @[Cache.scala 187:22]
+  assign io_out_bits_metas_0_dirty = pickForwardMeta & forwardWaymask_0 ? _GEN_5 : io_metaReadResp_0_dirty; // @[Cache.scala 187:22]
   assign io_out_bits_metas_1_tag = pickForwardMeta & forwardWaymask_1 ? _GEN_3 : io_metaReadResp_1_tag; // @[Cache.scala 187:22]
-  assign io_out_bits_metas_1_dirty = pickForwardMeta & forwardWaymask_1 ? 1'h0 : io_metaReadResp_1_dirty; // @[Cache.scala 187:22]
+  assign io_out_bits_metas_1_dirty = pickForwardMeta & forwardWaymask_1 ? _GEN_5 : io_metaReadResp_1_dirty; // @[Cache.scala 187:22]
   assign io_out_bits_metas_2_tag = pickForwardMeta & forwardWaymask_2 ? _GEN_3 : io_metaReadResp_2_tag; // @[Cache.scala 187:22]
-  assign io_out_bits_metas_2_dirty = pickForwardMeta & forwardWaymask_2 ? 1'h0 : io_metaReadResp_2_dirty; // @[Cache.scala 187:22]
+  assign io_out_bits_metas_2_dirty = pickForwardMeta & forwardWaymask_2 ? _GEN_5 : io_metaReadResp_2_dirty; // @[Cache.scala 187:22]
   assign io_out_bits_metas_3_tag = pickForwardMeta & forwardWaymask_3 ? _GEN_3 : io_metaReadResp_3_tag; // @[Cache.scala 187:22]
-  assign io_out_bits_metas_3_dirty = pickForwardMeta & forwardWaymask_3 ? 1'h0 : io_metaReadResp_3_dirty; // @[Cache.scala 187:22]
+  assign io_out_bits_metas_3_dirty = pickForwardMeta & forwardWaymask_3 ? _GEN_5 : io_metaReadResp_3_dirty; // @[Cache.scala 187:22]
   assign io_out_bits_datas_0_data = io_dataReadResp_0_data; // @[Cache.scala 213:21]
   assign io_out_bits_datas_1_data = io_dataReadResp_1_data; // @[Cache.scala 213:21]
   assign io_out_bits_datas_2_data = io_dataReadResp_2_data; // @[Cache.scala 213:21]
@@ -252,6 +228,9 @@ module CacheStage2(
     end
     if (isForwardMeta) begin // @[Reg.scala 20:18]
       forwardMetaReg_data_tag <= io_metaWriteBus_req_bits_data_tag; // @[Reg.scala 20:22]
+    end
+    if (isForwardMeta) begin // @[Reg.scala 20:18]
+      forwardMetaReg_data_dirty <= io_metaWriteBus_req_bits_data_dirty; // @[Reg.scala 20:22]
     end
     if (isForwardMeta) begin // @[Reg.scala 20:18]
       forwardMetaReg_waymask <= io_metaWriteBus_req_bits_waymask; // @[Reg.scala 20:22]
@@ -341,15 +320,17 @@ initial begin
   _RAND_1 = {1{`RANDOM}};
   forwardMetaReg_data_tag = _RAND_1[18:0];
   _RAND_2 = {1{`RANDOM}};
-  forwardMetaReg_waymask = _RAND_2[3:0];
-  _RAND_3 = {2{`RANDOM}};
-  victimWaymask_lfsr = _RAND_3[63:0];
-  _RAND_4 = {1{`RANDOM}};
-  isForwardDataReg = _RAND_4[0:0];
-  _RAND_5 = {2{`RANDOM}};
-  forwardDataReg_data_data = _RAND_5[63:0];
-  _RAND_6 = {1{`RANDOM}};
-  forwardDataReg_waymask = _RAND_6[3:0];
+  forwardMetaReg_data_dirty = _RAND_2[0:0];
+  _RAND_3 = {1{`RANDOM}};
+  forwardMetaReg_waymask = _RAND_3[3:0];
+  _RAND_4 = {2{`RANDOM}};
+  victimWaymask_lfsr = _RAND_4[63:0];
+  _RAND_5 = {1{`RANDOM}};
+  isForwardDataReg = _RAND_5[0:0];
+  _RAND_6 = {2{`RANDOM}};
+  forwardDataReg_data_data = _RAND_6[63:0];
+  _RAND_7 = {1{`RANDOM}};
+  forwardDataReg_waymask = _RAND_7[3:0];
 `endif // RANDOMIZE_REG_INIT
   `endif // RANDOMIZE
 end // initial
@@ -366,16 +347,19 @@ module Arbiter(
   input         io_in_1_valid,
   input  [6:0]  io_in_1_bits_setIdx,
   input  [18:0] io_in_1_bits_data_tag,
+  input         io_in_1_bits_data_dirty,
   input  [3:0]  io_in_1_bits_waymask,
   output        io_out_valid,
   output [6:0]  io_out_bits_setIdx,
   output [18:0] io_out_bits_data_tag,
+  output        io_out_bits_data_dirty,
   output [3:0]  io_out_bits_waymask
 );
   wire  grant_1 = ~io_in_0_valid; // @[Arbiter.scala 45:78]
   assign io_out_valid = ~grant_1 | io_in_1_valid; // @[Arbiter.scala 147:31]
   assign io_out_bits_setIdx = io_in_0_valid ? io_in_0_bits_setIdx : io_in_1_bits_setIdx; // @[Arbiter.scala 136:15 138:26 140:19]
   assign io_out_bits_data_tag = io_in_0_valid ? io_in_0_bits_data_tag : io_in_1_bits_data_tag; // @[Arbiter.scala 136:15 138:26 140:19]
+  assign io_out_bits_data_dirty = io_in_0_valid | io_in_1_bits_data_dirty; // @[Arbiter.scala 136:15 138:26 140:19]
   assign io_out_bits_waymask = io_in_0_valid ? io_in_0_bits_waymask : io_in_1_bits_waymask; // @[Arbiter.scala 136:15 138:26 140:19]
 endmodule
 module Arbiter_1(
@@ -448,6 +432,7 @@ module CacheStage3(
   output        io_metaWriteBus_req_valid,
   output [6:0]  io_metaWriteBus_req_bits_setIdx,
   output [18:0] io_metaWriteBus_req_bits_data_tag,
+  output        io_metaWriteBus_req_bits_data_dirty,
   output [3:0]  io_metaWriteBus_req_bits_waymask,
   input         io_mem_req_ready,
   output        io_mem_req_valid,
@@ -468,7 +453,10 @@ module CacheStage3(
   output        io_mmio_resp_ready,
   input         io_mmio_resp_valid,
   input  [63:0] io_mmio_resp_bits_rdata,
+  input         io_cohResp_ready,
   output        io_cohResp_valid,
+  output [3:0]  io_cohResp_bits_cmd,
+  output [63:0] io_cohResp_bits_rdata,
   output        io_dataReadRespToL1
 );
 `ifdef RANDOMIZE_REG_INIT
@@ -486,6 +474,7 @@ module CacheStage3(
   reg [31:0] _RAND_11;
   reg [63:0] _RAND_12;
   reg [31:0] _RAND_13;
+  reg [31:0] _RAND_14;
 `endif // RANDOMIZE_REG_INIT
   wire  metaWriteArb_io_in_0_valid; // @[Cache.scala 254:28]
   wire [6:0] metaWriteArb_io_in_0_bits_setIdx; // @[Cache.scala 254:28]
@@ -494,10 +483,12 @@ module CacheStage3(
   wire  metaWriteArb_io_in_1_valid; // @[Cache.scala 254:28]
   wire [6:0] metaWriteArb_io_in_1_bits_setIdx; // @[Cache.scala 254:28]
   wire [18:0] metaWriteArb_io_in_1_bits_data_tag; // @[Cache.scala 254:28]
+  wire  metaWriteArb_io_in_1_bits_data_dirty; // @[Cache.scala 254:28]
   wire [3:0] metaWriteArb_io_in_1_bits_waymask; // @[Cache.scala 254:28]
   wire  metaWriteArb_io_out_valid; // @[Cache.scala 254:28]
   wire [6:0] metaWriteArb_io_out_bits_setIdx; // @[Cache.scala 254:28]
   wire [18:0] metaWriteArb_io_out_bits_data_tag; // @[Cache.scala 254:28]
+  wire  metaWriteArb_io_out_bits_data_dirty; // @[Cache.scala 254:28]
   wire [3:0] metaWriteArb_io_out_bits_waymask; // @[Cache.scala 254:28]
   wire  dataWriteArb_io_in_0_valid; // @[Cache.scala 255:28]
   wire [9:0] dataWriteArb_io_in_0_bits_setIdx; // @[Cache.scala 255:28]
@@ -516,6 +507,8 @@ module CacheStage3(
   wire  mmio = io_in_valid & io_in_bits_mmio; // @[Cache.scala 259:26]
   wire  hit = io_in_valid & io_in_bits_hit; // @[Cache.scala 260:25]
   wire  miss = io_in_valid & ~io_in_bits_hit; // @[Cache.scala 261:26]
+  wire  _probe_T_1 = io_in_bits_req_cmd == 4'h8; // @[SimpleBus.scala 79:23]
+  wire  probe = io_in_valid & _probe_T_1; // @[Cache.scala 262:39]
   wire  _hitReadBurst_T = io_in_bits_req_cmd == 4'h2; // @[SimpleBus.scala 76:27]
   wire  hitReadBurst = hit & _hitReadBurst_T; // @[Cache.scala 263:26]
   wire  meta_dirty = io_in_bits_waymask[0] & io_in_bits_metas_0_dirty | io_in_bits_waymask[1] & io_in_bits_metas_1_dirty
@@ -537,6 +530,17 @@ module CacheStage3(
   wire [63:0] _dataReadArray_T_9 = _dataReadArray_T_8 | _dataReadArray_T_6; // @[Mux.scala 27:73]
   wire [63:0] _dataReadArray_T_10 = _dataReadArray_T_9 | _dataReadArray_T_7; // @[Mux.scala 27:73]
   wire [63:0] dataRead = useForwardData ? io_in_bits_forwardData_data_data : _dataReadArray_T_10; // @[Cache.scala 275:21]
+  wire [7:0] _wordMask_T_12 = io_in_bits_req_wmask[0] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_14 = io_in_bits_req_wmask[1] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_16 = io_in_bits_req_wmask[2] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_18 = io_in_bits_req_wmask[3] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_20 = io_in_bits_req_wmask[4] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_22 = io_in_bits_req_wmask[5] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_24 = io_in_bits_req_wmask[6] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [7:0] _wordMask_T_26 = io_in_bits_req_wmask[7] ? 8'hff : 8'h0; // @[Bitwise.scala 77:12]
+  wire [63:0] _wordMask_T_27 = {_wordMask_T_26,_wordMask_T_24,_wordMask_T_22,_wordMask_T_20,_wordMask_T_18,
+    _wordMask_T_16,_wordMask_T_14,_wordMask_T_12}; // @[Cat.scala 33:92]
+  wire [63:0] wordMask = io_in_bits_req_cmd[0] ? _wordMask_T_27 : 64'h0; // @[Cache.scala 276:21]
   reg [2:0] writeL2BeatCnt_value; // @[Counter.scala 61:40]
   wire  _T_5 = io_out_ready & io_out_valid; // @[Decoupled.scala 51:35]
   wire  _T_6 = io_in_bits_req_cmd == 4'h3; // @[Cache.scala 279:32]
@@ -545,6 +549,9 @@ module CacheStage3(
   wire [2:0] _value_T_1 = writeL2BeatCnt_value + 3'h1; // @[Counter.scala 77:24]
   wire [2:0] _GEN_0 = _T_5 & (io_in_bits_req_cmd == 4'h3 | _T_7) ? _value_T_1 : writeL2BeatCnt_value; // @[Cache.scala 279:83 Counter.scala 77:15 61:40]
   wire  hitWrite = hit & io_in_bits_req_cmd[0]; // @[Cache.scala 283:22]
+  wire [63:0] _dataHitWriteBus_x1_T = io_in_bits_req_wdata & wordMask; // @[BitUtils.scala 34:14]
+  wire [63:0] _dataHitWriteBus_x1_T_1 = ~wordMask; // @[BitUtils.scala 34:39]
+  wire [63:0] _dataHitWriteBus_x1_T_2 = dataRead & _dataHitWriteBus_x1_T_1; // @[BitUtils.scala 34:37]
   wire [2:0] _dataHitWriteBus_x3_T_3 = _T_8 ? writeL2BeatCnt_value : addr_wordIndex; // @[Cache.scala 286:51]
   wire  metaHitWriteBus_x5 = hitWrite & ~meta_dirty; // @[Cache.scala 289:22]
   reg [3:0] state; // @[Cache.scala 294:22]
@@ -569,8 +576,9 @@ module CacheStage3(
   wire [63:0] _dataHitWay_T_9 = _dataHitWay_T_8 | _dataHitWay_T_6; // @[Mux.scala 27:73]
   wire  _T_23 = io_dataReadBus_req_ready & io_dataReadBus_req_valid; // @[Decoupled.scala 51:35]
   wire  _T_26 = io_mem_req_ready & io_mem_req_valid; // @[Decoupled.scala 51:35]
+  wire  _T_27 = io_cohResp_ready & io_cohResp_valid; // @[Decoupled.scala 51:35]
   wire  _T_29 = hitReadBurst & io_out_ready; // @[Cache.scala 314:79]
-  wire [1:0] _GEN_8 = _T_26 | io_cohResp_valid | hitReadBurst & io_out_ready ? 2'h0 : state2; // @[Cache.scala 314:105 304:23 314:96]
+  wire [1:0] _GEN_8 = _T_26 | _T_27 | hitReadBurst & io_out_ready ? 2'h0 : state2; // @[Cache.scala 314:105 304:23 314:96]
   wire [31:0] raddr = {io_in_bits_req_addr[31:3],3'h0}; // @[Cat.scala 33:92]
   wire [31:0] waddr = {meta_tag,addr_index,6'h0}; // @[Cat.scala 33:92]
   wire  _cmd_T = state == 4'h1; // @[Cache.scala 322:23]
@@ -587,20 +595,32 @@ module CacheStage3(
   reg [63:0] inRdataRegDemand; // @[Reg.scala 19:16]
   wire  _io_cohResp_valid_T = state == 4'h0; // @[Cache.scala 343:31]
   wire  _io_cohResp_valid_T_4 = _T_15 & _io_mem_req_valid_T_2; // @[Cache.scala 344:46]
+  wire  _releaseLast_T_2 = _T_15 & _T_27; // @[Cache.scala 346:49]
+  reg [2:0] releaseLast_c_value; // @[Counter.scala 61:40]
+  wire  releaseLast_wrap_wrap = releaseLast_c_value == 3'h7; // @[Counter.scala 73:24]
+  wire [2:0] _releaseLast_wrap_value_T_1 = releaseLast_c_value + 3'h1; // @[Counter.scala 77:24]
+  wire  releaseLast = _releaseLast_T_2 & releaseLast_wrap_wrap; // @[Counter.scala 118:{16,23} 117:24]
+  wire [2:0] _io_cohResp_bits_cmd_T_1 = releaseLast ? 3'h6 : 3'h0; // @[Cache.scala 347:54]
+  wire [3:0] _io_cohResp_bits_cmd_T_2 = hit ? 4'hc : 4'h8; // @[Cache.scala 348:8]
   wire  respToL1Fire = _T_29 & _io_mem_req_valid_T_2; // @[Cache.scala 350:51]
   wire  _respToL1Last_T_6 = (_io_cohResp_valid_T | _io_cohResp_valid_T_4) & hitReadBurst & io_out_ready; // @[Cache.scala 351:112]
   reg [2:0] respToL1Last_c_value; // @[Counter.scala 61:40]
   wire  respToL1Last_wrap_wrap = respToL1Last_c_value == 3'h7; // @[Counter.scala 73:24]
   wire [2:0] _respToL1Last_wrap_value_T_1 = respToL1Last_c_value + 3'h1; // @[Counter.scala 77:24]
   wire  respToL1Last = _respToL1Last_T_6 & respToL1Last_wrap_wrap; // @[Counter.scala 118:{16,23} 117:24]
+  wire [3:0] _state_T = hit ? 4'h8 : 4'h0; // @[Cache.scala 360:23]
   wire [2:0] _value_T_4 = addr_wordIndex + 3'h1; // @[Cache.scala 365:93]
-  wire [3:0] _state_T_4 = mmio ? 4'h5 : 4'h1; // @[Cache.scala 367:21]
+  wire [2:0] _value_T_5 = addr_wordIndex == 3'h7 ? 3'h0 : _value_T_4; // @[Cache.scala 365:33]
+  wire  _T_38 = ~io_flush; // @[Cache.scala 366:38]
+  wire [3:0] _state_T_3 = meta_dirty ? 4'h3 : 4'h1; // @[Cache.scala 367:42]
+  wire [3:0] _state_T_4 = mmio ? 4'h5 : _state_T_3; // @[Cache.scala 367:21]
+  wire [3:0] _GEN_20 = (miss | mmio) & ~io_flush ? _state_T_4 : state; // @[Cache.scala 366:49 367:15 294:22]
   wire  _T_41 = io_mmio_req_ready & io_mmio_req_valid; // @[Decoupled.scala 51:35]
   wire  _T_43 = io_mmio_resp_ready & io_mmio_resp_valid; // @[Decoupled.scala 51:35]
   wire [3:0] _GEN_26 = _T_43 ? 4'h7 : state; // @[Cache.scala 294:22 372:{48,56}]
   wire [2:0] _value_T_7 = readBeatCnt_value + 3'h1; // @[Counter.scala 77:24]
-  wire [2:0] _GEN_27 = io_cohResp_valid | respToL1Fire ? _value_T_7 : readBeatCnt_value; // @[Cache.scala 375:46 Counter.scala 77:15 61:40]
-  wire [3:0] _GEN_28 = respToL1Fire & respToL1Last ? 4'h0 : state; // @[Cache.scala 294:22 376:{86,94}]
+  wire [2:0] _GEN_27 = _T_27 | respToL1Fire ? _value_T_7 : readBeatCnt_value; // @[Cache.scala 375:46 Counter.scala 77:15 61:40]
+  wire [3:0] _GEN_28 = probe & _T_27 & releaseLast | respToL1Fire & respToL1Last ? 4'h0 : state; // @[Cache.scala 294:22 376:{86,94}]
   wire [3:0] _GEN_29 = _T_26 ? 4'h2 : state; // @[Cache.scala 379:48 380:13 294:22]
   wire [2:0] _GEN_30 = _T_26 ? addr_wordIndex : readBeatCnt_value; // @[Cache.scala 379:48 381:25 Counter.scala 61:40]
   wire [2:0] _GEN_31 = _T_6 ? 3'h0 : _GEN_0; // @[Cache.scala 388:{52,75}]
@@ -635,6 +655,10 @@ module CacheStage3(
   wire  _GEN_57 = 4'h8 == state ? afterFirstRead : _GEN_52; // @[Cache.scala 353:18 336:31]
   wire [2:0] _GEN_58 = 4'h8 == state ? _GEN_0 : _GEN_53; // @[Cache.scala 353:18]
   wire [2:0] _GEN_59 = 4'h8 == state ? writeBeatCnt_value : _GEN_54; // @[Cache.scala 353:18 Counter.scala 61:40]
+  wire [63:0] _dataRefill_T = readingFirst ? wordMask : 64'h0; // @[Cache.scala 402:67]
+  wire [63:0] _dataRefill_T_1 = io_in_bits_req_wdata & _dataRefill_T; // @[BitUtils.scala 34:14]
+  wire [63:0] _dataRefill_T_2 = ~_dataRefill_T; // @[BitUtils.scala 34:39]
+  wire [63:0] _dataRefill_T_3 = io_mem_resp_bits_rdata & _dataRefill_T_2; // @[BitUtils.scala 34:37]
   wire  dataRefillWriteBus_x9 = _readingFirst_T_3 & _readingFirst_T_1; // @[Cache.scala 404:39]
   wire  metaRefillWriteBus_req_valid = dataRefillWriteBus_x9 & _T_57; // @[Cache.scala 412:59]
   wire  _io_out_bits_cmd_T_4 = ~io_in_bits_req_cmd[0] & ~io_in_bits_req_cmd[3]; // @[SimpleBus.scala 73:26]
@@ -642,7 +666,9 @@ module CacheStage3(
   wire [2:0] _io_out_bits_cmd_T_7 = _io_out_bits_cmd_T_4 ? 3'h6 : _io_out_bits_cmd_T_6; // @[Cache.scala 440:27]
   wire  _io_out_valid_T_4 = state == 4'h7; // @[Cache.scala 446:48]
   wire  _io_out_valid_T_23 = io_in_bits_req_cmd[0] | mmio ? _io_out_valid_T_4 : afterFirstRead & ~alreadyOutFire; // @[Cache.scala 447:45]
-  wire  _io_out_valid_T_24 = hit | _io_out_valid_T_23; // @[Cache.scala 447:28]
+  wire  _io_out_valid_T_25 = probe ? 1'h0 : hit | _io_out_valid_T_23; // @[Cache.scala 447:8]
+  wire  _io_isFinish_T_4 = miss ? _io_cohResp_valid_T : _T_15 & releaseLast; // @[Cache.scala 454:51]
+  wire  _io_isFinish_T_13 = hit | io_in_bits_req_cmd[0] ? _T_5 : _io_out_valid_T_4 & _GEN_12; // @[Cache.scala 455:8]
   Arbiter metaWriteArb ( // @[Cache.scala 254:28]
     .io_in_0_valid(metaWriteArb_io_in_0_valid),
     .io_in_0_bits_setIdx(metaWriteArb_io_in_0_bits_setIdx),
@@ -651,10 +677,12 @@ module CacheStage3(
     .io_in_1_valid(metaWriteArb_io_in_1_valid),
     .io_in_1_bits_setIdx(metaWriteArb_io_in_1_bits_setIdx),
     .io_in_1_bits_data_tag(metaWriteArb_io_in_1_bits_data_tag),
+    .io_in_1_bits_data_dirty(metaWriteArb_io_in_1_bits_data_dirty),
     .io_in_1_bits_waymask(metaWriteArb_io_in_1_bits_waymask),
     .io_out_valid(metaWriteArb_io_out_valid),
     .io_out_bits_setIdx(metaWriteArb_io_out_bits_setIdx),
     .io_out_bits_data_tag(metaWriteArb_io_out_bits_data_tag),
+    .io_out_bits_data_dirty(metaWriteArb_io_out_bits_data_dirty),
     .io_out_bits_waymask(metaWriteArb_io_out_bits_waymask)
   );
   Arbiter_1 dataWriteArb ( // @[Cache.scala 255:28]
@@ -671,12 +699,12 @@ module CacheStage3(
     .io_out_bits_data_data(dataWriteArb_io_out_bits_data_data),
     .io_out_bits_waymask(dataWriteArb_io_out_bits_waymask)
   );
-  assign io_in_ready = io_out_ready & (_io_cohResp_valid_T & ~hitReadBurst) & ~miss; // @[Cache.scala 458:70]
-  assign io_out_valid = io_in_valid & _io_out_valid_T_24; // @[Cache.scala 445:31]
+  assign io_in_ready = io_out_ready & (_io_cohResp_valid_T & ~hitReadBurst) & ~miss & ~probe; // @[Cache.scala 458:79]
+  assign io_out_valid = io_in_valid & _io_out_valid_T_25; // @[Cache.scala 445:31]
   assign io_out_bits_cmd = {{1'd0}, _io_out_bits_cmd_T_7}; // @[Cache.scala 440:21]
   assign io_out_bits_rdata = hit ? dataRead : inRdataRegDemand; // @[Cache.scala 439:29]
   assign io_out_bits_user = io_in_bits_req_user; // @[Cache.scala 442:56]
-  assign io_isFinish = hit | io_in_bits_req_cmd[0] ? _T_5 : _io_out_valid_T_4 & _GEN_12; // @[Cache.scala 455:8]
+  assign io_isFinish = probe ? _T_27 & _io_isFinish_T_4 : _io_isFinish_T_13; // @[Cache.scala 454:21]
   assign io_dataReadBus_req_valid = (state == 4'h3 | state == 4'h8) & state2 == 2'h0; // @[Cache.scala 306:81]
   assign io_dataReadBus_req_bits_setIdx = {addr_index,_T_20}; // @[Cat.scala 33:92]
   assign io_dataWriteBus_req_valid = dataWriteArb_io_out_valid; // @[Cache.scala 409:23]
@@ -686,6 +714,7 @@ module CacheStage3(
   assign io_metaWriteBus_req_valid = metaWriteArb_io_out_valid; // @[Cache.scala 419:23]
   assign io_metaWriteBus_req_bits_setIdx = metaWriteArb_io_out_bits_setIdx; // @[Cache.scala 419:23]
   assign io_metaWriteBus_req_bits_data_tag = metaWriteArb_io_out_bits_data_tag; // @[Cache.scala 419:23]
+  assign io_metaWriteBus_req_bits_data_dirty = metaWriteArb_io_out_bits_data_dirty; // @[Cache.scala 419:23]
   assign io_metaWriteBus_req_bits_waymask = metaWriteArb_io_out_bits_waymask; // @[Cache.scala 419:23]
   assign io_mem_req_valid = _cmd_T | _T_14 & state2 == 2'h2; // @[Cache.scala 329:48]
   assign io_mem_req_bits_addr = _cmd_T ? raddr : waddr; // @[Cache.scala 324:35]
@@ -699,7 +728,9 @@ module CacheStage3(
   assign io_mmio_req_bits_wmask = io_in_bits_req_wmask; // @[Cache.scala 332:20]
   assign io_mmio_req_bits_wdata = io_in_bits_req_wdata; // @[Cache.scala 332:20]
   assign io_mmio_resp_ready = 1'h1; // @[Cache.scala 333:22]
-  assign io_cohResp_valid = _T_15 & _io_mem_req_valid_T_2; // @[Cache.scala 344:46]
+  assign io_cohResp_valid = state == 4'h0 & probe | _io_cohResp_valid_T_4; // @[Cache.scala 343:53]
+  assign io_cohResp_bits_cmd = _T_15 ? {{1'd0}, _io_cohResp_bits_cmd_T_1} : _io_cohResp_bits_cmd_T_2; // @[Cache.scala 347:29]
+  assign io_cohResp_bits_rdata = _dataHitWay_T_9 | _dataHitWay_T_7; // @[Mux.scala 27:73]
   assign io_dataReadRespToL1 = hitReadBurst & (_io_cohResp_valid_T & io_out_ready | _io_cohResp_valid_T_4); // @[Cache.scala 459:39]
   assign metaWriteArb_io_in_0_valid = hitWrite & ~meta_dirty; // @[Cache.scala 289:22]
   assign metaWriteArb_io_in_0_bits_setIdx = io_in_bits_req_addr[12:6]; // @[Cache.scala 77:45]
@@ -708,14 +739,15 @@ module CacheStage3(
   assign metaWriteArb_io_in_1_valid = dataRefillWriteBus_x9 & _T_57; // @[Cache.scala 412:59]
   assign metaWriteArb_io_in_1_bits_setIdx = io_in_bits_req_addr[12:6]; // @[Cache.scala 77:45]
   assign metaWriteArb_io_in_1_bits_data_tag = io_in_bits_req_addr[31:13]; // @[Cache.scala 258:31]
+  assign metaWriteArb_io_in_1_bits_data_dirty = io_in_bits_req_cmd[0]; // @[SimpleBus.scala 74:22]
   assign metaWriteArb_io_in_1_bits_waymask = io_in_bits_waymask; // @[Cache.scala 411:32 SRAMTemplate.scala 38:24]
   assign dataWriteArb_io_in_0_valid = hit & io_in_bits_req_cmd[0]; // @[Cache.scala 283:22]
   assign dataWriteArb_io_in_0_bits_setIdx = {addr_index,_dataHitWriteBus_x3_T_3}; // @[Cat.scala 33:92]
-  assign dataWriteArb_io_in_0_bits_data_data = useForwardData ? io_in_bits_forwardData_data_data : _dataReadArray_T_10; // @[Cache.scala 275:21]
+  assign dataWriteArb_io_in_0_bits_data_data = _dataHitWriteBus_x1_T | _dataHitWriteBus_x1_T_2; // @[BitUtils.scala 34:26]
   assign dataWriteArb_io_in_0_bits_waymask = io_in_bits_waymask; // @[Cache.scala 284:29 SRAMTemplate.scala 38:24]
   assign dataWriteArb_io_in_1_valid = _readingFirst_T_3 & _readingFirst_T_1; // @[Cache.scala 404:39]
   assign dataWriteArb_io_in_1_bits_setIdx = {addr_index,readBeatCnt_value}; // @[Cat.scala 33:92]
-  assign dataWriteArb_io_in_1_bits_data_data = io_mem_resp_bits_rdata; // @[BitUtils.scala 34:26]
+  assign dataWriteArb_io_in_1_bits_data_data = _dataRefill_T_1 | _dataRefill_T_3; // @[BitUtils.scala 34:26]
   assign dataWriteArb_io_in_1_bits_waymask = io_in_bits_waymask; // @[Cache.scala 403:32 SRAMTemplate.scala 38:24]
   always @(posedge clock) begin
     if (reset) begin // @[Counter.scala 61:40]
@@ -732,10 +764,14 @@ module CacheStage3(
     if (reset) begin // @[Cache.scala 294:22]
       state <= 4'h0; // @[Cache.scala 294:22]
     end else if (4'h0 == state) begin // @[Cache.scala 353:18]
-      if (_T_29) begin // @[Cache.scala 363:50]
+      if (probe) begin // @[Cache.scala 358:20]
+        if (_T_27) begin // @[Cache.scala 359:32]
+          state <= _state_T; // @[Cache.scala 360:17]
+        end
+      end else if (_T_29) begin // @[Cache.scala 363:50]
         state <= 4'h8; // @[Cache.scala 364:15]
-      end else if ((miss | mmio) & ~io_flush) begin // @[Cache.scala 366:49]
-        state <= _state_T_4; // @[Cache.scala 367:15]
+      end else begin
+        state <= _GEN_20;
       end
     end else if (4'h5 == state) begin // @[Cache.scala 353:18]
       if (_T_41) begin // @[Cache.scala 371:46]
@@ -756,12 +792,12 @@ module CacheStage3(
     if (reset) begin // @[Counter.scala 61:40]
       readBeatCnt_value <= 3'h0; // @[Counter.scala 61:40]
     end else if (4'h0 == state) begin // @[Cache.scala 353:18]
-      if (_T_29) begin // @[Cache.scala 363:50]
-        if (addr_wordIndex == 3'h7) begin // @[Cache.scala 365:33]
-          readBeatCnt_value <= 3'h0;
-        end else begin
-          readBeatCnt_value <= _value_T_4;
+      if (probe) begin // @[Cache.scala 358:20]
+        if (_T_27) begin // @[Cache.scala 359:32]
+          readBeatCnt_value <= addr_wordIndex; // @[Cache.scala 361:29]
         end
+      end else if (_T_29) begin // @[Cache.scala 363:50]
+        readBeatCnt_value <= _value_T_5; // @[Cache.scala 365:27]
       end
     end else if (!(4'h5 == state)) begin // @[Cache.scala 353:18]
       if (!(4'h6 == state)) begin // @[Cache.scala 353:18]
@@ -822,6 +858,11 @@ module CacheStage3(
       end else begin
         inRdataRegDemand <= io_mem_resp_bits_rdata;
       end
+    end
+    if (reset) begin // @[Counter.scala 61:40]
+      releaseLast_c_value <= 3'h0; // @[Counter.scala 61:40]
+    end else if (_releaseLast_T_2) begin // @[Counter.scala 118:16]
+      releaseLast_c_value <= _releaseLast_wrap_value_T_1; // @[Counter.scala 77:15]
     end
     if (reset) begin // @[Counter.scala 61:40]
       respToL1Last_c_value <= 3'h0; // @[Counter.scala 61:40]
@@ -900,6 +941,30 @@ module CacheStage3(
       end
     `endif
     `endif // SYNTHESIS
+    `ifndef SYNTHESIS
+    `ifdef PRINTF_COND
+      if (`PRINTF_COND) begin
+    `endif
+        if (_T_3 & ~_T_38) begin
+          $fwrite(32'h80000002,
+            "Assertion failed: only allow to flush icache\n    at Cache.scala:463 assert(!(!ro.B && io.flush), \"only allow to flush icache\")\n"
+            ); // @[Cache.scala 463:9]
+        end
+    `ifdef PRINTF_COND
+      end
+    `endif
+    `endif // SYNTHESIS
+    `ifndef SYNTHESIS
+    `ifdef STOP_COND
+      if (`STOP_COND) begin
+    `endif
+        if (~_T_38 & _T_3) begin
+          $fatal; // @[Cache.scala 463:9]
+        end
+    `ifdef STOP_COND
+      end
+    `endif
+    `endif // SYNTHESIS
   end
 // Register and memory initialization
 `ifdef RANDOMIZE_GARBAGE_ASSIGN
@@ -964,7 +1029,9 @@ initial begin
   _RAND_12 = {2{`RANDOM}};
   inRdataRegDemand = _RAND_12[63:0];
   _RAND_13 = {1{`RANDOM}};
-  respToL1Last_c_value = _RAND_13[2:0];
+  releaseLast_c_value = _RAND_13[2:0];
+  _RAND_14 = {1{`RANDOM}};
+  respToL1Last_c_value = _RAND_14[2:0];
 `endif // RANDOMIZE_REG_INIT
   `endif // RANDOMIZE
 end // initial
@@ -975,6 +1042,7 @@ end // initial
 endmodule
 module SRAMTemplate(
   input         clock,
+  input         reset,
   output        io_r_req_ready,
   input         io_r_req_valid,
   input  [6:0]  io_r_req_bits_setIdx,
@@ -993,6 +1061,7 @@ module SRAMTemplate(
   input         io_w_req_valid,
   input  [6:0]  io_w_req_bits_setIdx,
   input  [18:0] io_w_req_bits_data_tag,
+  input         io_w_req_bits_data_dirty,
   input  [3:0]  io_w_req_bits_waymask
 );
 `ifdef RANDOMIZE_MEM_INIT
@@ -1010,6 +1079,8 @@ module SRAMTemplate(
   reg [31:0] _RAND_8;
   reg [31:0] _RAND_10;
   reg [31:0] _RAND_11;
+  reg [31:0] _RAND_12;
+  reg [31:0] _RAND_13;
 `endif // RANDOMIZE_REG_INIT
   reg [20:0] array_0 [0:127]; // @[SRAMTemplate.scala 76:26]
   wire  array_0_rdata_MPORT_en; // @[SRAMTemplate.scala 76:26]
@@ -1051,8 +1122,16 @@ module SRAMTemplate(
   wire  array_3_MPORT_en; // @[SRAMTemplate.scala 76:26]
   reg  array_3_rdata_MPORT_en_pipe_0;
   reg [6:0] array_3_rdata_MPORT_addr_pipe_0;
-  wire  _realRen_T = ~io_w_req_valid; // @[SRAMTemplate.scala 89:41]
-  wire [19:0] wdataword_hi = {io_w_req_bits_data_tag,1'h1}; // @[SRAMTemplate.scala 92:78]
+  reg  resetState; // @[SRAMTemplate.scala 80:30]
+  reg [6:0] resetSet; // @[Counter.scala 61:40]
+  wire  wrap_wrap = resetSet == 7'h7f; // @[Counter.scala 73:24]
+  wire [6:0] _wrap_value_T_1 = resetSet + 7'h1; // @[Counter.scala 77:24]
+  wire  resetFinish = resetState & wrap_wrap; // @[Counter.scala 118:{16,23} 117:24]
+  wire  _GEN_2 = resetFinish ? 1'h0 : resetState; // @[SRAMTemplate.scala 82:24 80:30 82:38]
+  wire  wen = io_w_req_valid | resetState; // @[SRAMTemplate.scala 88:52]
+  wire  _realRen_T = ~wen; // @[SRAMTemplate.scala 89:41]
+  wire [20:0] _wdataword_T = {io_w_req_bits_data_tag,1'h1,io_w_req_bits_data_dirty}; // @[SRAMTemplate.scala 92:78]
+  wire [3:0] waymask = resetState ? 4'hf : io_w_req_bits_waymask; // @[SRAMTemplate.scala 93:20]
   wire [20:0] _rdata_WIRE_1 = array_0_rdata_MPORT_data; // @[SRAMTemplate.scala 98:{78,78}]
   wire [20:0] _rdata_WIRE_2 = array_1_rdata_MPORT_data; // @[SRAMTemplate.scala 98:{78,78}]
   wire [20:0] _rdata_WIRE_3 = array_2_rdata_MPORT_data; // @[SRAMTemplate.scala 98:{78,78}]
@@ -1060,32 +1139,32 @@ module SRAMTemplate(
   assign array_0_rdata_MPORT_en = array_0_rdata_MPORT_en_pipe_0;
   assign array_0_rdata_MPORT_addr = array_0_rdata_MPORT_addr_pipe_0;
   assign array_0_rdata_MPORT_data = array_0[array_0_rdata_MPORT_addr]; // @[SRAMTemplate.scala 76:26]
-  assign array_0_MPORT_data = {wdataword_hi,1'h0};
-  assign array_0_MPORT_addr = io_w_req_bits_setIdx;
-  assign array_0_MPORT_mask = io_w_req_bits_waymask[0];
-  assign array_0_MPORT_en = io_w_req_valid;
+  assign array_0_MPORT_data = resetState ? 21'h0 : _wdataword_T;
+  assign array_0_MPORT_addr = resetState ? resetSet : io_w_req_bits_setIdx;
+  assign array_0_MPORT_mask = waymask[0];
+  assign array_0_MPORT_en = io_w_req_valid | resetState;
   assign array_1_rdata_MPORT_en = array_1_rdata_MPORT_en_pipe_0;
   assign array_1_rdata_MPORT_addr = array_1_rdata_MPORT_addr_pipe_0;
   assign array_1_rdata_MPORT_data = array_1[array_1_rdata_MPORT_addr]; // @[SRAMTemplate.scala 76:26]
-  assign array_1_MPORT_data = {wdataword_hi,1'h0};
-  assign array_1_MPORT_addr = io_w_req_bits_setIdx;
-  assign array_1_MPORT_mask = io_w_req_bits_waymask[1];
-  assign array_1_MPORT_en = io_w_req_valid;
+  assign array_1_MPORT_data = resetState ? 21'h0 : _wdataword_T;
+  assign array_1_MPORT_addr = resetState ? resetSet : io_w_req_bits_setIdx;
+  assign array_1_MPORT_mask = waymask[1];
+  assign array_1_MPORT_en = io_w_req_valid | resetState;
   assign array_2_rdata_MPORT_en = array_2_rdata_MPORT_en_pipe_0;
   assign array_2_rdata_MPORT_addr = array_2_rdata_MPORT_addr_pipe_0;
   assign array_2_rdata_MPORT_data = array_2[array_2_rdata_MPORT_addr]; // @[SRAMTemplate.scala 76:26]
-  assign array_2_MPORT_data = {wdataword_hi,1'h0};
-  assign array_2_MPORT_addr = io_w_req_bits_setIdx;
-  assign array_2_MPORT_mask = io_w_req_bits_waymask[2];
-  assign array_2_MPORT_en = io_w_req_valid;
+  assign array_2_MPORT_data = resetState ? 21'h0 : _wdataword_T;
+  assign array_2_MPORT_addr = resetState ? resetSet : io_w_req_bits_setIdx;
+  assign array_2_MPORT_mask = waymask[2];
+  assign array_2_MPORT_en = io_w_req_valid | resetState;
   assign array_3_rdata_MPORT_en = array_3_rdata_MPORT_en_pipe_0;
   assign array_3_rdata_MPORT_addr = array_3_rdata_MPORT_addr_pipe_0;
   assign array_3_rdata_MPORT_data = array_3[array_3_rdata_MPORT_addr]; // @[SRAMTemplate.scala 76:26]
-  assign array_3_MPORT_data = {wdataword_hi,1'h0};
-  assign array_3_MPORT_addr = io_w_req_bits_setIdx;
-  assign array_3_MPORT_mask = io_w_req_bits_waymask[3];
-  assign array_3_MPORT_en = io_w_req_valid;
-  assign io_r_req_ready = ~io_w_req_valid; // @[SRAMTemplate.scala 101:53]
+  assign array_3_MPORT_data = resetState ? 21'h0 : _wdataword_T;
+  assign array_3_MPORT_addr = resetState ? resetSet : io_w_req_bits_setIdx;
+  assign array_3_MPORT_mask = waymask[3];
+  assign array_3_MPORT_en = io_w_req_valid | resetState;
+  assign io_r_req_ready = ~resetState & _realRen_T; // @[SRAMTemplate.scala 101:33]
   assign io_r_resp_data_0_tag = _rdata_WIRE_1[20:2]; // @[SRAMTemplate.scala 98:78]
   assign io_r_resp_data_0_valid = _rdata_WIRE_1[1]; // @[SRAMTemplate.scala 98:78]
   assign io_r_resp_data_0_dirty = _rdata_WIRE_1[0]; // @[SRAMTemplate.scala 98:78]
@@ -1126,6 +1205,12 @@ module SRAMTemplate(
     array_3_rdata_MPORT_en_pipe_0 <= io_r_req_valid & _realRen_T;
     if (io_r_req_valid & _realRen_T) begin
       array_3_rdata_MPORT_addr_pipe_0 <= io_r_req_bits_setIdx;
+    end
+    resetState <= reset | _GEN_2; // @[SRAMTemplate.scala 80:{30,30}]
+    if (reset) begin // @[Counter.scala 61:40]
+      resetSet <= 7'h0; // @[Counter.scala 61:40]
+    end else if (resetState) begin // @[Counter.scala 118:16]
+      resetSet <= _wrap_value_T_1; // @[Counter.scala 77:15]
     end
   end
 // Register and memory initialization
@@ -1194,6 +1279,10 @@ initial begin
   array_3_rdata_MPORT_en_pipe_0 = _RAND_10[0:0];
   _RAND_11 = {1{`RANDOM}};
   array_3_rdata_MPORT_addr_pipe_0 = _RAND_11[6:0];
+  _RAND_12 = {1{`RANDOM}};
+  resetState = _RAND_12[0:0];
+  _RAND_13 = {1{`RANDOM}};
+  resetSet = _RAND_13[6:0];
 `endif // RANDOMIZE_REG_INIT
   `endif // RANDOMIZE
 end // initial
@@ -1235,6 +1324,7 @@ module SRAMTemplateWithArbiter(
   input         io_w_req_valid,
   input  [6:0]  io_w_req_bits_setIdx,
   input  [18:0] io_w_req_bits_data_tag,
+  input         io_w_req_bits_data_dirty,
   input  [3:0]  io_w_req_bits_waymask
 );
 `ifdef RANDOMIZE_REG_INIT
@@ -1253,6 +1343,7 @@ module SRAMTemplateWithArbiter(
   reg [31:0] _RAND_12;
 `endif // RANDOMIZE_REG_INIT
   wire  ram_clock; // @[SRAMTemplate.scala 121:19]
+  wire  ram_reset; // @[SRAMTemplate.scala 121:19]
   wire  ram_io_r_req_ready; // @[SRAMTemplate.scala 121:19]
   wire  ram_io_r_req_valid; // @[SRAMTemplate.scala 121:19]
   wire [6:0] ram_io_r_req_bits_setIdx; // @[SRAMTemplate.scala 121:19]
@@ -1271,6 +1362,7 @@ module SRAMTemplateWithArbiter(
   wire  ram_io_w_req_valid; // @[SRAMTemplate.scala 121:19]
   wire [6:0] ram_io_w_req_bits_setIdx; // @[SRAMTemplate.scala 121:19]
   wire [18:0] ram_io_w_req_bits_data_tag; // @[SRAMTemplate.scala 121:19]
+  wire  ram_io_w_req_bits_data_dirty; // @[SRAMTemplate.scala 121:19]
   wire [3:0] ram_io_w_req_bits_waymask; // @[SRAMTemplate.scala 121:19]
   wire  readArb_io_in_0_ready; // @[SRAMTemplate.scala 124:23]
   wire  readArb_io_in_0_valid; // @[SRAMTemplate.scala 124:23]
@@ -1293,6 +1385,7 @@ module SRAMTemplateWithArbiter(
   reg  r_3_dirty; // @[Reg.scala 35:20]
   SRAMTemplate ram ( // @[SRAMTemplate.scala 121:19]
     .clock(ram_clock),
+    .reset(ram_reset),
     .io_r_req_ready(ram_io_r_req_ready),
     .io_r_req_valid(ram_io_r_req_valid),
     .io_r_req_bits_setIdx(ram_io_r_req_bits_setIdx),
@@ -1311,6 +1404,7 @@ module SRAMTemplateWithArbiter(
     .io_w_req_valid(ram_io_w_req_valid),
     .io_w_req_bits_setIdx(ram_io_w_req_bits_setIdx),
     .io_w_req_bits_data_tag(ram_io_w_req_bits_data_tag),
+    .io_w_req_bits_data_dirty(ram_io_w_req_bits_data_dirty),
     .io_w_req_bits_waymask(ram_io_w_req_bits_waymask)
   );
   Arbiter_2 readArb ( // @[SRAMTemplate.scala 124:23]
@@ -1335,11 +1429,13 @@ module SRAMTemplateWithArbiter(
   assign io_r_0_resp_data_3_valid = REG ? ram_io_r_resp_data_3_valid : r_3_valid; // @[Hold.scala 23:48]
   assign io_r_0_resp_data_3_dirty = REG ? ram_io_r_resp_data_3_dirty : r_3_dirty; // @[Hold.scala 23:48]
   assign ram_clock = clock;
+  assign ram_reset = reset;
   assign ram_io_r_req_valid = readArb_io_out_valid; // @[SRAMTemplate.scala 126:16]
   assign ram_io_r_req_bits_setIdx = readArb_io_out_bits_setIdx; // @[SRAMTemplate.scala 126:16]
   assign ram_io_w_req_valid = io_w_req_valid; // @[SRAMTemplate.scala 122:12]
   assign ram_io_w_req_bits_setIdx = io_w_req_bits_setIdx; // @[SRAMTemplate.scala 122:12]
   assign ram_io_w_req_bits_data_tag = io_w_req_bits_data_tag; // @[SRAMTemplate.scala 122:12]
+  assign ram_io_w_req_bits_data_dirty = io_w_req_bits_data_dirty; // @[SRAMTemplate.scala 122:12]
   assign ram_io_w_req_bits_waymask = io_w_req_bits_waymask; // @[SRAMTemplate.scala 122:12]
   assign readArb_io_in_0_valid = io_r_0_req_valid; // @[SRAMTemplate.scala 125:17]
   assign readArb_io_in_0_bits_setIdx = io_r_0_req_bits_setIdx; // @[SRAMTemplate.scala 125:17]
@@ -1930,7 +2026,14 @@ module Arbiter_4(
   input  [3:0]  io_in_0_bits_cmd,
   input  [7:0]  io_in_0_bits_wmask,
   input  [63:0] io_in_0_bits_wdata,
-  input  [15:0] io_in_0_bits_user,
+  output        io_in_1_ready,
+  input         io_in_1_valid,
+  input  [31:0] io_in_1_bits_addr,
+  input  [2:0]  io_in_1_bits_size,
+  input  [3:0]  io_in_1_bits_cmd,
+  input  [7:0]  io_in_1_bits_wmask,
+  input  [63:0] io_in_1_bits_wdata,
+  input  [15:0] io_in_1_bits_user,
   input         io_out_ready,
   output        io_out_valid,
   output [31:0] io_out_bits_addr,
@@ -1940,14 +2043,16 @@ module Arbiter_4(
   output [63:0] io_out_bits_wdata,
   output [15:0] io_out_bits_user
 );
+  wire  grant_1 = ~io_in_0_valid; // @[Arbiter.scala 45:78]
   assign io_in_0_ready = io_out_ready; // @[Arbiter.scala 146:19]
-  assign io_out_valid = io_in_0_valid; // @[Arbiter.scala 147:31]
-  assign io_out_bits_addr = io_in_0_bits_addr; // @[Arbiter.scala 136:15]
-  assign io_out_bits_size = io_in_0_bits_size; // @[Arbiter.scala 136:15]
-  assign io_out_bits_cmd = io_in_0_bits_cmd; // @[Arbiter.scala 136:15]
-  assign io_out_bits_wmask = io_in_0_bits_wmask; // @[Arbiter.scala 136:15]
-  assign io_out_bits_wdata = io_in_0_bits_wdata; // @[Arbiter.scala 136:15]
-  assign io_out_bits_user = io_in_0_bits_user; // @[Arbiter.scala 136:15]
+  assign io_in_1_ready = grant_1 & io_out_ready; // @[Arbiter.scala 146:19]
+  assign io_out_valid = ~grant_1 | io_in_1_valid; // @[Arbiter.scala 147:31]
+  assign io_out_bits_addr = io_in_0_valid ? io_in_0_bits_addr : io_in_1_bits_addr; // @[Arbiter.scala 136:15 138:26 140:19]
+  assign io_out_bits_size = io_in_0_valid ? io_in_0_bits_size : io_in_1_bits_size; // @[Arbiter.scala 136:15 138:26 140:19]
+  assign io_out_bits_cmd = io_in_0_valid ? io_in_0_bits_cmd : io_in_1_bits_cmd; // @[Arbiter.scala 136:15 138:26 140:19]
+  assign io_out_bits_wmask = io_in_0_valid ? io_in_0_bits_wmask : io_in_1_bits_wmask; // @[Arbiter.scala 136:15 138:26 140:19]
+  assign io_out_bits_wdata = io_in_0_valid ? io_in_0_bits_wdata : io_in_1_bits_wdata; // @[Arbiter.scala 136:15 138:26 140:19]
+  assign io_out_bits_user = io_in_0_valid ? 16'h0 : io_in_1_bits_user; // @[Arbiter.scala 136:15 138:26 140:19]
 endmodule
 module Cache(
   input         clock,
@@ -2035,8 +2140,6 @@ module Cache(
   reg [63:0] _RAND_30;
   reg [31:0] _RAND_31;
 `endif // RANDOMIZE_REG_INIT
-  wire  s1_clock; // @[Cache.scala 480:18]
-  wire  s1_reset; // @[Cache.scala 480:18]
   wire  s1_io_in_ready; // @[Cache.scala 480:18]
   wire  s1_io_in_valid; // @[Cache.scala 480:18]
   wire [31:0] s1_io_in_bits_addr; // @[Cache.scala 480:18]
@@ -2130,6 +2233,7 @@ module Cache(
   wire  s2_io_metaWriteBus_req_valid; // @[Cache.scala 481:18]
   wire [6:0] s2_io_metaWriteBus_req_bits_setIdx; // @[Cache.scala 481:18]
   wire [18:0] s2_io_metaWriteBus_req_bits_data_tag; // @[Cache.scala 481:18]
+  wire  s2_io_metaWriteBus_req_bits_data_dirty; // @[Cache.scala 481:18]
   wire [3:0] s2_io_metaWriteBus_req_bits_waymask; // @[Cache.scala 481:18]
   wire  s2_io_dataWriteBus_req_valid; // @[Cache.scala 481:18]
   wire [9:0] s2_io_dataWriteBus_req_bits_setIdx; // @[Cache.scala 481:18]
@@ -2184,6 +2288,7 @@ module Cache(
   wire  s3_io_metaWriteBus_req_valid; // @[Cache.scala 482:18]
   wire [6:0] s3_io_metaWriteBus_req_bits_setIdx; // @[Cache.scala 482:18]
   wire [18:0] s3_io_metaWriteBus_req_bits_data_tag; // @[Cache.scala 482:18]
+  wire  s3_io_metaWriteBus_req_bits_data_dirty; // @[Cache.scala 482:18]
   wire [3:0] s3_io_metaWriteBus_req_bits_waymask; // @[Cache.scala 482:18]
   wire  s3_io_mem_req_ready; // @[Cache.scala 482:18]
   wire  s3_io_mem_req_valid; // @[Cache.scala 482:18]
@@ -2204,7 +2309,10 @@ module Cache(
   wire  s3_io_mmio_resp_ready; // @[Cache.scala 482:18]
   wire  s3_io_mmio_resp_valid; // @[Cache.scala 482:18]
   wire [63:0] s3_io_mmio_resp_bits_rdata; // @[Cache.scala 482:18]
+  wire  s3_io_cohResp_ready; // @[Cache.scala 482:18]
   wire  s3_io_cohResp_valid; // @[Cache.scala 482:18]
+  wire [3:0] s3_io_cohResp_bits_cmd; // @[Cache.scala 482:18]
+  wire [63:0] s3_io_cohResp_bits_rdata; // @[Cache.scala 482:18]
   wire  s3_io_dataReadRespToL1; // @[Cache.scala 482:18]
   wire  metaArray_clock; // @[Cache.scala 483:25]
   wire  metaArray_reset; // @[Cache.scala 483:25]
@@ -2226,6 +2334,7 @@ module Cache(
   wire  metaArray_io_w_req_valid; // @[Cache.scala 483:25]
   wire [6:0] metaArray_io_w_req_bits_setIdx; // @[Cache.scala 483:25]
   wire [18:0] metaArray_io_w_req_bits_data_tag; // @[Cache.scala 483:25]
+  wire  metaArray_io_w_req_bits_data_dirty; // @[Cache.scala 483:25]
   wire [3:0] metaArray_io_w_req_bits_waymask; // @[Cache.scala 483:25]
   wire  dataArray_clock; // @[Cache.scala 484:25]
   wire  dataArray_reset; // @[Cache.scala 484:25]
@@ -2254,7 +2363,14 @@ module Cache(
   wire [3:0] arb_io_in_0_bits_cmd; // @[Cache.scala 493:19]
   wire [7:0] arb_io_in_0_bits_wmask; // @[Cache.scala 493:19]
   wire [63:0] arb_io_in_0_bits_wdata; // @[Cache.scala 493:19]
-  wire [15:0] arb_io_in_0_bits_user; // @[Cache.scala 493:19]
+  wire  arb_io_in_1_ready; // @[Cache.scala 493:19]
+  wire  arb_io_in_1_valid; // @[Cache.scala 493:19]
+  wire [31:0] arb_io_in_1_bits_addr; // @[Cache.scala 493:19]
+  wire [2:0] arb_io_in_1_bits_size; // @[Cache.scala 493:19]
+  wire [3:0] arb_io_in_1_bits_cmd; // @[Cache.scala 493:19]
+  wire [7:0] arb_io_in_1_bits_wmask; // @[Cache.scala 493:19]
+  wire [63:0] arb_io_in_1_bits_wdata; // @[Cache.scala 493:19]
+  wire [15:0] arb_io_in_1_bits_user; // @[Cache.scala 493:19]
   wire  arb_io_out_ready; // @[Cache.scala 493:19]
   wire  arb_io_out_valid; // @[Cache.scala 493:19]
   wire [31:0] arb_io_out_bits_addr; // @[Cache.scala 493:19]
@@ -2304,8 +2420,6 @@ module Cache(
   reg [3:0] s3_io_in_bits_r_forwardData_waymask; // @[Reg.scala 19:16]
   wire  _io_in_resp_valid_T = s3_io_out_bits_cmd == 4'h4; // @[SimpleBus.scala 95:24]
   CacheStage1 s1 ( // @[Cache.scala 480:18]
-    .clock(s1_clock),
-    .reset(s1_reset),
     .io_in_ready(s1_io_in_ready),
     .io_in_valid(s1_io_in_valid),
     .io_in_bits_addr(s1_io_in_bits_addr),
@@ -2401,6 +2515,7 @@ module Cache(
     .io_metaWriteBus_req_valid(s2_io_metaWriteBus_req_valid),
     .io_metaWriteBus_req_bits_setIdx(s2_io_metaWriteBus_req_bits_setIdx),
     .io_metaWriteBus_req_bits_data_tag(s2_io_metaWriteBus_req_bits_data_tag),
+    .io_metaWriteBus_req_bits_data_dirty(s2_io_metaWriteBus_req_bits_data_dirty),
     .io_metaWriteBus_req_bits_waymask(s2_io_metaWriteBus_req_bits_waymask),
     .io_dataWriteBus_req_valid(s2_io_dataWriteBus_req_valid),
     .io_dataWriteBus_req_bits_setIdx(s2_io_dataWriteBus_req_bits_setIdx),
@@ -2457,6 +2572,7 @@ module Cache(
     .io_metaWriteBus_req_valid(s3_io_metaWriteBus_req_valid),
     .io_metaWriteBus_req_bits_setIdx(s3_io_metaWriteBus_req_bits_setIdx),
     .io_metaWriteBus_req_bits_data_tag(s3_io_metaWriteBus_req_bits_data_tag),
+    .io_metaWriteBus_req_bits_data_dirty(s3_io_metaWriteBus_req_bits_data_dirty),
     .io_metaWriteBus_req_bits_waymask(s3_io_metaWriteBus_req_bits_waymask),
     .io_mem_req_ready(s3_io_mem_req_ready),
     .io_mem_req_valid(s3_io_mem_req_valid),
@@ -2477,7 +2593,10 @@ module Cache(
     .io_mmio_resp_ready(s3_io_mmio_resp_ready),
     .io_mmio_resp_valid(s3_io_mmio_resp_valid),
     .io_mmio_resp_bits_rdata(s3_io_mmio_resp_bits_rdata),
+    .io_cohResp_ready(s3_io_cohResp_ready),
     .io_cohResp_valid(s3_io_cohResp_valid),
+    .io_cohResp_bits_cmd(s3_io_cohResp_bits_cmd),
+    .io_cohResp_bits_rdata(s3_io_cohResp_bits_rdata),
     .io_dataReadRespToL1(s3_io_dataReadRespToL1)
   );
   SRAMTemplateWithArbiter metaArray ( // @[Cache.scala 483:25]
@@ -2501,6 +2620,7 @@ module Cache(
     .io_w_req_valid(metaArray_io_w_req_valid),
     .io_w_req_bits_setIdx(metaArray_io_w_req_bits_setIdx),
     .io_w_req_bits_data_tag(metaArray_io_w_req_bits_data_tag),
+    .io_w_req_bits_data_dirty(metaArray_io_w_req_bits_data_dirty),
     .io_w_req_bits_waymask(metaArray_io_w_req_bits_waymask)
   );
   SRAMTemplateWithArbiter_1 dataArray ( // @[Cache.scala 484:25]
@@ -2533,7 +2653,14 @@ module Cache(
     .io_in_0_bits_cmd(arb_io_in_0_bits_cmd),
     .io_in_0_bits_wmask(arb_io_in_0_bits_wmask),
     .io_in_0_bits_wdata(arb_io_in_0_bits_wdata),
-    .io_in_0_bits_user(arb_io_in_0_bits_user),
+    .io_in_1_ready(arb_io_in_1_ready),
+    .io_in_1_valid(arb_io_in_1_valid),
+    .io_in_1_bits_addr(arb_io_in_1_bits_addr),
+    .io_in_1_bits_size(arb_io_in_1_bits_size),
+    .io_in_1_bits_cmd(arb_io_in_1_bits_cmd),
+    .io_in_1_bits_wmask(arb_io_in_1_bits_wmask),
+    .io_in_1_bits_wdata(arb_io_in_1_bits_wdata),
+    .io_in_1_bits_user(arb_io_in_1_bits_user),
     .io_out_ready(arb_io_out_ready),
     .io_out_valid(arb_io_out_valid),
     .io_out_bits_addr(arb_io_out_bits_addr),
@@ -2543,7 +2670,7 @@ module Cache(
     .io_out_bits_wdata(arb_io_out_bits_wdata),
     .io_out_bits_user(arb_io_out_bits_user)
   );
-  assign io_in_req_ready = arb_io_in_0_ready; // @[Cache.scala 494:28]
+  assign io_in_req_ready = arb_io_in_1_ready; // @[Cache.scala 494:28]
   assign io_in_resp_valid = s3_io_out_valid & _io_in_resp_valid_T ? 1'h0 : s3_io_out_valid | s3_io_dataReadRespToL1; // @[Cache.scala 510:26]
   assign io_in_resp_bits_cmd = s3_io_out_bits_cmd; // @[Cache.scala 504:14]
   assign io_in_resp_bits_rdata = s3_io_out_bits_rdata; // @[Cache.scala 504:14]
@@ -2555,10 +2682,10 @@ module Cache(
   assign io_out_mem_req_bits_wmask = 8'hff; // @[Cache.scala 506:14]
   assign io_out_mem_req_bits_wdata = s3_io_mem_req_bits_wdata; // @[Cache.scala 506:14]
   assign io_out_mem_resp_ready = 1'h1; // @[Cache.scala 506:14]
-  assign io_out_coh_req_ready = 1'h1; // @[Cache.scala 522:26]
-  assign io_out_coh_resp_valid = 1'h0; // @[Cache.scala 524:27]
-  assign io_out_coh_resp_bits_cmd = 4'h0;
-  assign io_out_coh_resp_bits_rdata = 64'h0;
+  assign io_out_coh_req_ready = arb_io_in_0_ready; // @[Cache.scala 519:26]
+  assign io_out_coh_resp_valid = s3_io_cohResp_valid; // @[Cache.scala 520:21]
+  assign io_out_coh_resp_bits_cmd = s3_io_cohResp_bits_cmd; // @[Cache.scala 520:21]
+  assign io_out_coh_resp_bits_rdata = s3_io_cohResp_bits_rdata; // @[Cache.scala 520:21]
   assign io_mmio_req_valid = s3_io_mmio_req_valid; // @[Cache.scala 507:11]
   assign io_mmio_req_bits_addr = s3_io_mmio_req_bits_addr; // @[Cache.scala 507:11]
   assign io_mmio_req_bits_size = s3_io_mmio_req_bits_size; // @[Cache.scala 507:11]
@@ -2567,8 +2694,6 @@ module Cache(
   assign io_mmio_req_bits_wdata = s3_io_mmio_req_bits_wdata; // @[Cache.scala 507:11]
   assign io_mmio_resp_ready = 1'h1; // @[Cache.scala 507:11]
   assign io_empty = ~s2_io_in_valid & ~s3_io_in_valid; // @[Cache.scala 508:31]
-  assign s1_clock = clock;
-  assign s1_reset = reset;
   assign s1_io_in_valid = arb_io_out_valid; // @[Cache.scala 496:12]
   assign s1_io_in_bits_addr = arb_io_out_bits_addr; // @[Cache.scala 496:12]
   assign s1_io_in_bits_size = arb_io_out_bits_size; // @[Cache.scala 496:12]
@@ -2624,6 +2749,7 @@ module Cache(
   assign s2_io_metaWriteBus_req_valid = s3_io_metaWriteBus_req_valid; // @[Cache.scala 538:22]
   assign s2_io_metaWriteBus_req_bits_setIdx = s3_io_metaWriteBus_req_bits_setIdx; // @[Cache.scala 538:22]
   assign s2_io_metaWriteBus_req_bits_data_tag = s3_io_metaWriteBus_req_bits_data_tag; // @[Cache.scala 538:22]
+  assign s2_io_metaWriteBus_req_bits_data_dirty = s3_io_metaWriteBus_req_bits_data_dirty; // @[Cache.scala 538:22]
   assign s2_io_metaWriteBus_req_bits_waymask = s3_io_metaWriteBus_req_bits_waymask; // @[Cache.scala 538:22]
   assign s2_io_dataWriteBus_req_valid = s3_io_dataWriteBus_req_valid; // @[Cache.scala 537:22]
   assign s2_io_dataWriteBus_req_bits_setIdx = s3_io_dataWriteBus_req_bits_setIdx; // @[Cache.scala 537:22]
@@ -2670,6 +2796,7 @@ module Cache(
   assign s3_io_mmio_req_ready = io_mmio_req_ready; // @[Cache.scala 507:11]
   assign s3_io_mmio_resp_valid = io_mmio_resp_valid; // @[Cache.scala 507:11]
   assign s3_io_mmio_resp_bits_rdata = io_mmio_resp_bits_rdata; // @[Cache.scala 507:11]
+  assign s3_io_cohResp_ready = io_out_coh_resp_ready; // @[Cache.scala 520:21]
   assign metaArray_clock = clock;
   assign metaArray_reset = reset; // @[Cache.scala 490:37]
   assign metaArray_io_r_0_req_valid = s1_io_metaReadBus_req_valid; // @[Cache.scala 528:21]
@@ -2677,6 +2804,7 @@ module Cache(
   assign metaArray_io_w_req_valid = s3_io_metaWriteBus_req_valid; // @[Cache.scala 532:18]
   assign metaArray_io_w_req_bits_setIdx = s3_io_metaWriteBus_req_bits_setIdx; // @[Cache.scala 532:18]
   assign metaArray_io_w_req_bits_data_tag = s3_io_metaWriteBus_req_bits_data_tag; // @[Cache.scala 532:18]
+  assign metaArray_io_w_req_bits_data_dirty = s3_io_metaWriteBus_req_bits_data_dirty; // @[Cache.scala 532:18]
   assign metaArray_io_w_req_bits_waymask = s3_io_metaWriteBus_req_bits_waymask; // @[Cache.scala 532:18]
   assign dataArray_clock = clock;
   assign dataArray_reset = reset;
@@ -2688,13 +2816,19 @@ module Cache(
   assign dataArray_io_w_req_bits_setIdx = s3_io_dataWriteBus_req_bits_setIdx; // @[Cache.scala 533:18]
   assign dataArray_io_w_req_bits_data_data = s3_io_dataWriteBus_req_bits_data_data; // @[Cache.scala 533:18]
   assign dataArray_io_w_req_bits_waymask = s3_io_dataWriteBus_req_bits_waymask; // @[Cache.scala 533:18]
-  assign arb_io_in_0_valid = io_in_req_valid; // @[Cache.scala 494:28]
-  assign arb_io_in_0_bits_addr = io_in_req_bits_addr; // @[Cache.scala 494:28]
-  assign arb_io_in_0_bits_size = io_in_req_bits_size; // @[Cache.scala 494:28]
-  assign arb_io_in_0_bits_cmd = io_in_req_bits_cmd; // @[Cache.scala 494:28]
-  assign arb_io_in_0_bits_wmask = io_in_req_bits_wmask; // @[Cache.scala 494:28]
-  assign arb_io_in_0_bits_wdata = io_in_req_bits_wdata; // @[Cache.scala 494:28]
-  assign arb_io_in_0_bits_user = io_in_req_bits_user; // @[Cache.scala 494:28]
+  assign arb_io_in_0_valid = io_out_coh_req_valid; // @[Cache.scala 518:24]
+  assign arb_io_in_0_bits_addr = io_out_coh_req_bits_addr; // @[Cache.scala 515:19 SimpleBus.scala 64:15]
+  assign arb_io_in_0_bits_size = io_out_coh_req_bits_size; // @[Cache.scala 515:19 SimpleBus.scala 66:15]
+  assign arb_io_in_0_bits_cmd = io_out_coh_req_bits_cmd; // @[Cache.scala 515:19 SimpleBus.scala 65:14]
+  assign arb_io_in_0_bits_wmask = io_out_coh_req_bits_wmask; // @[Cache.scala 515:19 SimpleBus.scala 68:16]
+  assign arb_io_in_0_bits_wdata = io_out_coh_req_bits_wdata; // @[Cache.scala 515:19 SimpleBus.scala 67:16]
+  assign arb_io_in_1_valid = io_in_req_valid; // @[Cache.scala 494:28]
+  assign arb_io_in_1_bits_addr = io_in_req_bits_addr; // @[Cache.scala 494:28]
+  assign arb_io_in_1_bits_size = io_in_req_bits_size; // @[Cache.scala 494:28]
+  assign arb_io_in_1_bits_cmd = io_in_req_bits_cmd; // @[Cache.scala 494:28]
+  assign arb_io_in_1_bits_wmask = io_in_req_bits_wmask; // @[Cache.scala 494:28]
+  assign arb_io_in_1_bits_wdata = io_in_req_bits_wdata; // @[Cache.scala 494:28]
+  assign arb_io_in_1_bits_user = io_in_req_bits_user; // @[Cache.scala 494:28]
   assign arb_io_out_ready = s1_io_in_ready; // @[Cache.scala 496:12]
   always @(posedge clock) begin
     if (reset) begin // @[Pipeline.scala 24:24]

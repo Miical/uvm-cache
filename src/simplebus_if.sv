@@ -25,9 +25,13 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
                  input [15:0] user);
         while (1) begin
             @(posedge clk)
-            if (!req_ready) begin
-                req_valid <= 1;
-                resp_ready <= 1;
+                if (!req_ready) break;
+        end
+        while (1) begin
+            @(posedge clk)
+            if (req_ready) begin
+                req_valid <= 1'b1;
+                resp_ready <= 1'b1;
                 req_bits_addr <= addr;
                 req_bits_size <= size;
                 req_bits_cmd <= cmd;
@@ -37,6 +41,51 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
                 break;
             end
         end
+        @(posedge clk)
+            req_valid <= 0;
+    endtask
+
+    task get_resp();
+        while (1) begin
+            @(posedge clk)
+                if (!resp_valid) break;
+        end
+        while (1) begin
+            @(posedge clk)
+                if (resp_valid) break;
+        end
+    endtask
+
+    task get_req();
+        while (1) begin
+            @(posedge clk)
+                if (!req_valid) break;
+        end
+        while (1) begin
+            @(posedge clk)
+                if (req_valid) break;
+        end
+    endtask
+
+    task put_resp(input cmd,
+                  input rdata,
+                  input user);
+        while (1) begin
+            @(posedge clk)
+                if (!resp_ready) break;
+        end
+        while (1) begin
+            @(posedge clk)
+            if (resp_ready) begin
+                req_ready <= 1'b1;
+                resp_valid <= 1'b1;
+                resp_bits_cmd <= cmd;
+                resp_bits_rdata <= rdata;
+                resp_bits_user <= user;
+            end
+        end
+        @(posedge clk)
+            resp_valid <= 0;
     endtask
 
     task print();

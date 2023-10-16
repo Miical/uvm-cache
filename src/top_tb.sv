@@ -87,12 +87,6 @@ initial begin
     clk = 0;
     forever begin
        #100 clk = ~clk;
-       $display("in_if");
-       in_if.print();
-       $display("mem_if");
-       mem_if.print();
-       $display("mmio_if");
-       mmio_if.print();
     end
  end
 
@@ -101,49 +95,51 @@ initial begin
     rst = 1'b1;
     #200;
     rst = 1'b0;
-    #100
-    rst = 1'b1;
-    #100
-    rst = 1'b0;
  end
 
+ /*
  initial begin
-   mem_if.req_ready <= 1;
-   mem_if.resp_valid <= 0;
-   mem_if.resp_bits_cmd <= 0;
-   mem_if.resp_bits_rdata <= 0;
-
-   mmio_if.req_ready <= 1;
-   mmio_if.resp_valid <= 0;
-   mmio_if.resp_bits_cmd <= 0;
-   mmio_if.resp_bits_rdata <= 0;
-
-   coh_if.req_valid <= 0;
-   coh_if.req_bits_addr <= 0;
-   coh_if.req_bits_size <= 0;
-   coh_if.req_bits_cmd <= 0;
-   coh_if.req_bits_wmask <= 0;
-   coh_if.req_bits_wdata <= 0;
-   coh_if.resp_ready <= 0;
-
-   in_if.req_valid <= 0;
-   in_if.req_bits_addr <= 32'hffffffff;
-   in_if.req_bits_size <= 1;
-   in_if.req_bits_cmd <= 4'b1000;
-   in_if.req_bits_wmask <= 0;
-   in_if.req_bits_wdata <= 0;
-   in_if.req_bits_user <= 16'h1234;
-   in_if.resp_ready <= 0;
-
- end
+   forever begin
+      #100
+      if (mem_if.req_valid == 1 || in_if.resp_valid == 1 || mmio_if.req_valid == 1) begin
+         $display("in_if");
+         in_if.print();
+         $display("mem_if");
+         mem_if.print();
+         $display("okk");
+         $finish();
+     end
+  end
+end
+*/
 
  initial begin
-   # 600
-   in_if.req_valid = 1;
-   # 3000
-   in_if.req_valid = 0;
-   # 600
-   in_if.resp_ready = 1;
+   mem_if.req_ready <= 1'b0;
+   mem_if.resp_valid <= 1'b0;
+   mem_if.resp_bits_cmd <= 4'b0000;
+   mem_if.resp_bits_rdata <= 64'h0000000000000000;
+
+   mmio_if.req_ready <= 1'b0;
+   mmio_if.resp_valid <= 1'b0;
+   mmio_if.resp_bits_cmd <= 4'b0000;
+   mmio_if.resp_bits_rdata <= 64'h0000000000000000;
+
+   coh_if.req_valid <= 1'b0;
+   coh_if.req_bits_addr <= 32'h00000000;
+   coh_if.req_bits_size <= 2'b00;
+   coh_if.req_bits_cmd <= 4'b0000;
+   coh_if.req_bits_wmask <= 8'b00000000;
+   coh_if.req_bits_wdata <= 16'h0000;
+   coh_if.resp_ready <= 1'b0;
+
+   in_if.req_valid <= 1'b0;
+   in_if.req_bits_addr <= 32'h00000000;
+   in_if.req_bits_size <= 2'b00;
+   in_if.req_bits_cmd <= 4'b0000;
+   in_if.req_bits_wmask <= 8'b00000000;
+   in_if.req_bits_wdata <= 64'h0000000000000000;
+   in_if.req_bits_user <= 16'h0000;
+   in_if.resp_ready <= 1'b0;
  end
 
  initial begin
