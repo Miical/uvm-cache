@@ -114,7 +114,7 @@ end
 */
 
  initial begin
-   mem_if.req_ready <= 1'b0;
+   mem_if.req_ready <= 1'b1;
    mem_if.resp_valid <= 1'b0;
    mem_if.resp_bits_cmd <= 4'b0000;
    mem_if.resp_bits_rdata <= 64'h0000000000000000;
@@ -139,7 +139,7 @@ end
    in_if.req_bits_wmask <= 8'b00000000;
    in_if.req_bits_wdata <= 64'h0000000000000000;
    in_if.req_bits_user <= 16'h0000;
-   in_if.resp_ready <= 1'b0;
+   in_if.resp_ready <= 1'b1;
  end
 
  initial begin

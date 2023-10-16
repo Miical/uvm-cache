@@ -24,7 +24,6 @@ function void bus_agent::build_phase(uvm_phase phase);
     end
     mon = bus_monitor::type_id::create("mon", this);
     mon.is_req = is_req;
-    mon.is_active = is_active == UVM_ACTIVE;
  endfunction
 
 `endif

@@ -30,12 +30,12 @@ task bus_driver::main_phase(uvm_phase phase);
     while(top_tb.rst)
         @(posedge top_tb.clk);
 
-    for (int i = 0; i < 100; i++) begin
+    for (int i = 0; i < 1000; i++) begin
         tr = new("tr");
         if (is_req)
             assert(tr.randomize() with { is_req == 1; req_bits_cmd == 4'b0000; });
         else
-            assert(tr.randomize() with { is_req == 0; });
+            assert(tr.randomize() with { is_req == 0; resp_bits_cmd == 4'b0110; });
         drive_one_pkt(tr);
     end
 
@@ -43,8 +43,7 @@ task bus_driver::main_phase(uvm_phase phase);
 endtask
 
 task bus_driver::drive_one_pkt(bus_seq_item tr);
-    @(posedge bif.clk)
-    if (is_req) begin
+    if (is_req == 1) begin
         bif.put_req(
             tr.req_bits_addr,
             tr.req_bits_size,
@@ -56,10 +55,15 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
         `uvm_info("bus_driver", "put req successfully", UVM_LOW)
         tr.print();
     end
-    /*
-    else
+    else begin
+        bif.put_resp(
+            tr.resp_bits_cmd,
+            tr.resp_bits_rdata,
+            tr.resp_bits_user);
+        $display("%s", get_full_name());
         `uvm_info("bus_driver", "driver resp", UVM_LOW)
-    */
+        tr.print();
+    end
 endtask
 
 `endif

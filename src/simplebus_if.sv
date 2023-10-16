@@ -67,25 +67,30 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
         end
     endtask
 
-    task put_resp(input cmd,
-                  input rdata,
-                  input user);
+    task put_resp(input [3:0] cmd,
+                  input [63:0] rdata,
+                  input  [15:0] user);
         while (1) begin
             @(posedge clk)
-                if (!resp_ready) break;
+                if (!req_valid) break;
+        end
+        while (1) begin
+            @(posedge clk)
+                if (req_valid) break;
         end
         while (1) begin
             @(posedge clk)
             if (resp_ready) begin
-                req_ready <= 1'b1;
+                $display("cmd = %x, rdata = %x, user = %x", cmd, rdata, user);
                 resp_valid <= 1'b1;
                 resp_bits_cmd <= cmd;
                 resp_bits_rdata <= rdata;
                 resp_bits_user <= user;
+                break;
             end
         end
         @(posedge clk)
-            resp_valid <= 0;
+            resp_valid <= 1'b0;
     endtask
 
     task print();
