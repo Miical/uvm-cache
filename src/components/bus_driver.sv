@@ -20,26 +20,36 @@ class bus_driver extends uvm_driver#(bus_seq_item);
 
     extern task main_phase(uvm_phase phase);
     extern task drive_one_pkt(bus_seq_item tr);
+    extern task get_response(bus_seq_item tr);
 endclass
 
 
 task bus_driver::main_phase(uvm_phase phase);
-    bus_seq_item tr;
-    phase.raise_objection(this);
-
     while(top_tb.rst)
         @(posedge top_tb.clk);
 
-    for (int i = 0; i < 1000; i++) begin
-        tr = new("tr");
-        if (is_req)
-            assert(tr.randomize() with { is_req == 1; req_bits_cmd == 4'b0000; });
-        else
-            assert(tr.randomize() with { is_req == 0; resp_bits_cmd == 4'b0110; });
-        drive_one_pkt(tr);
+    if (!is_req) begin
+        seq_item_port.get_next_item(req);
+        rsp = new("rsp");
+        rsp.is_req = is_req;
+        rsp.set_id_info(req);
+        get_response(rsp);
+        seq_item_port.put_response(rsp);
+        seq_item_port.item_done();
     end
 
-    phase.drop_objection(this);
+    while (1) begin
+        seq_item_port.get_next_item(req);
+        drive_one_pkt(req);
+
+        rsp = new("rsp");
+        rsp.is_req = is_req;
+        rsp.set_id_info(req);
+        get_response(rsp);
+
+        seq_item_port.put_response(rsp);
+        seq_item_port.item_done();
+    end
 endtask
 
 task bus_driver::drive_one_pkt(bus_seq_item tr);
@@ -51,18 +61,36 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
             tr.req_bits_wmask,
             tr.req_bits_wdata,
             tr.req_bits_user);
-        $display("%s", get_full_name());
-        `uvm_info("bus_driver", "put req successfully", UVM_LOW)
-        tr.print();
+        `uvm_info("bus_driver",
+            $sformatf("%s : put req successfully", get_full_name()), UVM_LOW)
     end
     else begin
         bif.put_resp(
             tr.resp_bits_cmd,
             tr.resp_bits_rdata,
             tr.resp_bits_user);
-        $display("%s", get_full_name());
-        `uvm_info("bus_driver", "driver resp", UVM_LOW)
-        tr.print();
+        `uvm_info("bus_driver",
+            $sformatf("%s : put resp successfully", get_full_name()), UVM_LOW)
+    end
+endtask
+
+task bus_driver::get_response(bus_seq_item tr);
+    if (!is_req) begin
+        bif.get_req();
+        tr.io_flush = bif.io_flush;
+        tr.req_bits_addr = bif.req_bits_addr;
+        tr.req_bits_size = bif.req_bits_size;
+        tr.req_bits_cmd = bif.req_bits_cmd;
+        tr.req_bits_wmask = bif.req_bits_wmask;
+        tr.req_bits_wdata = bif.req_bits_wdata;
+        tr.req_bits_user = bif.req_bits_user;
+    end
+    else begin
+        bif.get_resp();
+        tr.io_empty = bif.io_empty;
+        tr.resp_bits_cmd = bif.resp_bits_cmd;
+        tr.resp_bits_rdata = bif.resp_bits_rdata;
+        tr.resp_bits_user = bif.resp_bits_user;
     end
 endtask
 

@@ -89,6 +89,7 @@ module CacheStage2(
   output        io_out_bits_isForwardData,
   output [63:0] io_out_bits_forwardData_data_data,
   output [3:0]  io_out_bits_forwardData_waymask,
+  output [3:0]  victim_way_mask,
   input  [18:0] io_metaReadResp_0_tag,
   input         io_metaReadResp_0_valid,
   input         io_metaReadResp_0_dirty,
@@ -163,6 +164,7 @@ module CacheStage2(
     ]; // @[LFSR64.scala 26:43]
   wire [63:0] _victimWaymask_lfsr_T_2 = {victimWaymask_xor,victimWaymask_lfsr[63:1]}; // @[Cat.scala 33:92]
   wire [3:0] victimWaymask = 4'h1 << victimWaymask_lfsr[1:0]; // @[Cache.scala 191:42]
+  assign victim_way_mask = victimWaymask; // Interface for uvm reference model
   wire  _invalidVec_T = ~metaWay_0_valid; // @[Cache.scala 193:45]
   wire  _invalidVec_T_1 = ~metaWay_1_valid; // @[Cache.scala 193:45]
   wire  _invalidVec_T_2 = ~metaWay_2_valid; // @[Cache.scala 193:45]
@@ -2104,7 +2106,8 @@ module Cache(
   input         io_mmio_resp_valid,
   input  [3:0]  io_mmio_resp_bits_cmd,
   input  [63:0] io_mmio_resp_bits_rdata,
-  output        io_empty
+  output        io_empty,
+  output [3:0]  victim_way_mask
 );
 `ifdef RANDOMIZE_REG_INIT
   reg [31:0] _RAND_0;
@@ -2520,7 +2523,8 @@ module Cache(
     .io_dataWriteBus_req_valid(s2_io_dataWriteBus_req_valid),
     .io_dataWriteBus_req_bits_setIdx(s2_io_dataWriteBus_req_bits_setIdx),
     .io_dataWriteBus_req_bits_data_data(s2_io_dataWriteBus_req_bits_data_data),
-    .io_dataWriteBus_req_bits_waymask(s2_io_dataWriteBus_req_bits_waymask)
+    .io_dataWriteBus_req_bits_waymask(s2_io_dataWriteBus_req_bits_waymask),
+    .victim_way_mask(victim_way_mask)
   );
   CacheStage3 s3 ( // @[Cache.scala 482:18]
     .clock(s3_clock),

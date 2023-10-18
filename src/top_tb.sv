@@ -7,9 +7,16 @@ import uvm_pkg::*;
 `include "src/bus_seq_item.sv"
 `include "src/components/bus_driver.sv"
 `include "src/components/bus_monitor.sv"
+`include "src/components/mem_seq.sv"
+`include "src/components/bus_sequencer.sv"
 `include "src/components/bus_agent.sv"
-`include "src/components/cache_env.sv"
+`include "src/components/in_env.sv"
+`include "src/components/mem_env.sv"
+`include "src/components/cache_model.sv"
 `include "src/components/top_env.sv"
+
+`include "src/testcase/base_test.sv"
+`include "src/testcase/cache_case0.sv"
 
 module top_tb;
 
@@ -17,6 +24,7 @@ reg       clk;
 reg       rst;
 reg [1:0] io_flush;
 reg       io_empty;
+reg [3:0] victim_way_mask;
 
 simplebus_if in_if(clk, rst, io_flush, io_empty);
 simplebus_if mem_if(clk, rst, io_flush, io_empty);
@@ -76,10 +84,12 @@ Cache cache(.clock(clk),
             .io_mmio_resp_ready(mmio_if.resp_ready),
             .io_mmio_resp_valid(mmio_if.resp_valid),
             .io_mmio_resp_bits_cmd(mmio_if.resp_bits_cmd),
-            .io_mmio_resp_bits_rdata(mmio_if.resp_bits_rdata));
+            .io_mmio_resp_bits_rdata(mmio_if.resp_bits_rdata),
+
+            .victim_way_mask(victim_way_mask));
 
 initial begin
-    run_test("top_env");
+    run_test("cache_case0");
     $finish();
 end
 
@@ -101,17 +111,12 @@ initial begin
  initial begin
    forever begin
       #100
-      if (mem_if.req_valid == 1 || in_if.resp_valid == 1 || mmio_if.req_valid == 1) begin
-         $display("in_if");
-         in_if.print();
-         $display("mem_if");
-         mem_if.print();
-         $display("okk");
-         $finish();
-     end
-  end
-end
-*/
+      if (mem_if.req_valid) begin
+         $display("victim_way_mask = %b", victim_way_mask);
+      end
+   end
+ end
+ */
 
  initial begin
    mem_if.req_ready <= 1'b1;
@@ -143,13 +148,13 @@ end
  end
 
  initial begin
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.in_env.i_agt.drv", "bif", in_if);
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.in_env.i_agt.mon", "bif", in_if);
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.in_env.o_agt.mon", "bif", in_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.i_env.i_agt.drv", "bif", in_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.i_env.i_agt.mon", "bif", in_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.i_env.o_agt.mon", "bif", in_if);
 
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.mem_env.i_agt.drv", "bif", mem_if);
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.mem_env.i_agt.mon", "bif", mem_if);
-    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.mem_env.o_agt.mon", "bif", mem_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.i_agt.drv", "bif", mem_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.i_agt.mon", "bif", mem_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.o_agt.mon", "bif", mem_if);
  end
 
 endmodule

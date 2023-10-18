@@ -3,8 +3,9 @@
 
 class top_env extends uvm_env;
 
-    cache_env in_env;
-    cache_env mem_env;
+    in_env  i_env;
+    mem_env m_env;
+    // cache_model refmodel;
 
     function new(string name = "cache_env", uvm_component parent);
         super.new(name, parent);
@@ -12,10 +13,10 @@ class top_env extends uvm_env;
 
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
-        in_env = cache_env::type_id::create("in_env", this);
-        mem_env = cache_env::type_id::create("mem_env", this);
-        in_env.is_in = 1;
-        mem_env.is_in = 0;
+
+        i_env = in_env::type_id::create("i_env", this);
+        m_env = mem_env::type_id::create("m_env", this);
+        // refmodel = cache_model::type_id::create("cache_model", this);
     endfunction
 
     `uvm_component_utils(top_env)
