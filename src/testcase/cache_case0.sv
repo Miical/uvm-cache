@@ -12,8 +12,8 @@ class case0_sequence extends uvm_sequence #(bus_seq_item);
             starting_phase.raise_objection(this);
 
         `uvm_info("seq", "case0_sequence run", UVM_MEDIUM)
-        repeat (10) begin
-            `uvm_do_with(tr, { is_req == 1; req_bits_cmd == 4'b0000; })
+        repeat (50) begin
+            `uvm_do_with(tr, { is_req == 1; req_bits_cmd == 4'b0001; })
             `uvm_info("in_seq", "send transaction", UVM_MEDIUM)
             get_response(rsp);
             `uvm_info("in_seq", "get response", UVM_MEDIUM)

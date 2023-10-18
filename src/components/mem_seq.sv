@@ -9,12 +9,18 @@ class mem_seq extends uvm_sequence #(bus_seq_item);
     endfunction
 
     virtual task body();
-        `uvm_info("seq", "mem_seq run", UVM_MEDIUM)
+        `uvm_info("mem_seq", "mem_seq run", UVM_MEDIUM)
+        `uvm_do(tr)
+
         while(1) begin
-            `uvm_do_with(tr, { is_req == 0; resp_bits_cmd == 4'b0110; })
-            `uvm_info("seq", "send transaction", UVM_MEDIUM)
             get_response(rsp);
-            `uvm_info("seq", "get response", UVM_MEDIUM)
+            `uvm_info("mem_seq", "get response", UVM_MEDIUM)
+
+            if (rsp.req_bits_cmd == 4'b0000 || rsp.req_bits_cmd == 4'b0010)
+                `uvm_do_with(tr, { is_req == 0; resp_bits_cmd == 4'b0110; })
+            else
+                `uvm_do_with(tr, { is_req == 0; resp_bits_cmd == 4'b0101; })
+            `uvm_info("mem_seq", "send transaction", UVM_MEDIUM)
         end
     endtask
 
