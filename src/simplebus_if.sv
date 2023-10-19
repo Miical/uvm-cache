@@ -89,7 +89,7 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
         $display("resp_bits_rdata = %x", resp_bits_rdata);
         $display("resp_bits_user = %x", resp_bits_user);
 
-        $display("io_flash = %x", io_flush);
+        $display("io_flush = %x", io_flush);
         $display("io_empty = %x", io_empty);
         $display("------------------------------------------");
     endtask

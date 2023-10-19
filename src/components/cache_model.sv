@@ -46,7 +46,20 @@ class cache_model extends uvm_component;
 
       mem_port.get(resp);
       `uvm_info("cache_model", "write_back resp", UVM_HIGH)
-      assert(resp.req_bits_cmd == 4'b0101);
+      assert(resp.resp_bits_cmd == 4'b0101);
+      cache_dirty[setid][wayid] = 1'b0;
+
+      // ------ nut_cache write 8 times ------
+      req.req_bits_wdata = 64'b0;
+      for (int i = 0; i < 6; i++) begin
+         mem_ap.write(req);
+         mem_port.get(resp);
+      end
+
+      req.req_bits_cmd = 4'b0111;
+      mem_ap.write(req);
+      mem_port.get(resp);
+      // -------------------------------------
    endtask
 
    task fetch(bit [31:0] addr, int wayid);
@@ -100,6 +113,7 @@ task cache_model::main_phase(uvm_phase phase);
    while(1) begin
       bit [18:0] req_tag;
       bit [9:0] req_setid;
+      bit [63:0] bitsmask;
       int hit_id;
       bus_seq_item req;
       bus_seq_item resp;
@@ -147,9 +161,10 @@ task cache_model::main_phase(uvm_phase phase);
       if (req.req_bits_cmd == 4'b0001 || req.req_bits_cmd == 4'b0011
             || req.req_bits_cmd == 4'b0111) begin
           cache_dirty[req_setid][hit_id] = 1'b1;
+          bitsmask = bytesmask2bitsmask(req.req_bits_wmask);
           cache_data[req_setid][hit_id] =
-            (cache_data[req_setid][hit_id] & ~req.req_bits_wmask)
-            | (req.req_bits_wdata & req.req_bits_wmask);
+            (cache_data[req_setid][hit_id] & ~bitsmask)
+            | (req.req_bits_wdata & bitsmask);
       end
 
       // send respond
