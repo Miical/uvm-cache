@@ -7,16 +7,18 @@ import uvm_pkg::*;
 `include "src/bus_seq_item.sv"
 `include "src/components/bus_driver.sv"
 `include "src/components/bus_monitor.sv"
-`include "src/components/mem_seq.sv"
 `include "src/components/bus_sequencer.sv"
 `include "src/components/bus_agent.sv"
-`include "src/components/in_env.sv"
-`include "src/components/mem_env.sv"
+`include "src/in/in_scoreboard.sv"
+`include "src/in/in_env.sv"
+`include "src/mem/mem_seq.sv"
+`include "src/mem/mem_scoreboard.sv"
+`include "src/mem/mem_env.sv"
 `include "src/components/cache_model.sv"
 `include "src/components/top_env.sv"
 
-`include "src/testcase/base_test.sv"
-`include "src/testcase/cache_case0.sv"
+`include "../testcase/base_test.sv"
+`include "../testcase/cache_case0.sv"
 
 module top_tb;
 

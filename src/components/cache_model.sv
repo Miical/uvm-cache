@@ -3,8 +3,8 @@
 
 class cache_model extends uvm_component;
 
-   // uvm_blocking_get_port #(bus_seq_item)  in_port;
-   // uvm_analysis_port #(bus_seq_item)  in_ap;
+   uvm_blocking_get_port #(bus_seq_item)  in_port;
+   uvm_analysis_port #(bus_seq_item)  in_ap;
    uvm_blocking_get_port #(bus_seq_item)  mem_port;
    uvm_analysis_port #(bus_seq_item)  mem_ap;
 
@@ -21,8 +21,8 @@ endfunction
 
 function void cache_model::build_phase(uvm_phase phase);
    super.build_phase(phase);
-   // in_port = new("in_port", this);
-   // in_ap = new("in_ap", this);
+   in_port = new("in_port", this);
+   in_ap = new("in_ap", this);
    mem_port = new("mem_port", this);
    mem_ap = new("mem_ap", this);
 endfunction
@@ -30,7 +30,18 @@ endfunction
 task cache_model::main_phase(uvm_phase phase);
    super.main_phase(phase);
    while(1) begin
-      // `uvm_info("cache_model", "get one transaction, copy and print it:", UVM_LOW)
+      bus_seq_item tr;
+      in_port.get(tr);
+      `uvm_info("cache_model", "[in] get one transaction", UVM_LOW)
+
+      in_ap.write(tr);
+      `uvm_info("cache_model", "[in] forward transaction", UVM_LOW)
+
+      mem_port.get(tr);
+      `uvm_info("cache_model", "[mem] get one transaction", UVM_LOW)
+
+      mem_ap.write(tr);
+      `uvm_info("cache_model", "[mem] forward transaction", UVM_LOW)
    end
 endtask
 `endif

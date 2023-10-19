@@ -5,6 +5,9 @@ class mem_env extends uvm_env;
 
     bus_agent i_agt;
     bus_agent o_agt;
+    mem_scoreboard scb;
+
+    uvm_tlm_analysis_fifo #(bus_seq_item) agt_scb_fifo;
 
     function new(string name = "mem_env", uvm_component parent);
         super.new(name, parent);
@@ -23,10 +26,23 @@ class mem_env extends uvm_env;
         o_agt.is_active = UVM_PASSIVE;
         i_agt.is_req = 0;
         o_agt.is_req = 1;
+
+        scb = mem_scoreboard::type_id::create("scb", this);
+
+        agt_scb_fifo = new("agt_scb_fifo", this);
     endfunction
+
+    extern virtual function void connect_phase(uvm_phase phase);
 
     `uvm_component_utils(mem_env)
 endclass
 
+
+function void mem_env::connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+
+    i_agt.ap.connect(agt_scb_fifo.analysis_export);
+    scb.act_port.connect(agt_scb_fifo.blocking_get_export);
+endfunction
 
 `endif
