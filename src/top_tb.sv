@@ -4,6 +4,7 @@
 import uvm_pkg::*;
 
 `include "src/simplebus_if.sv"
+`include "src/mask_if.sv"
 `include "src/bus_seq_item.sv"
 `include "src/components/bus_driver.sv"
 `include "src/components/bus_monitor.sv"
@@ -26,12 +27,13 @@ reg       clk;
 reg       rst;
 reg [1:0] io_flush;
 reg       io_empty;
-reg [3:0] victim_way_mask;
 
 simplebus_if in_if(clk, rst, io_flush, io_empty);
 simplebus_if mem_if(clk, rst, io_flush, io_empty);
 simplebus_if coh_if(clk, rst, io_flush, io_empty);
 simplebus_if mmio_if(clk, rst, io_flush, io_empty);
+
+mask_if mif(clk, rst);
 
 Cache cache(.clock(clk),
             .reset(rst),
@@ -88,7 +90,8 @@ Cache cache(.clock(clk),
             .io_mmio_resp_bits_cmd(mmio_if.resp_bits_cmd),
             .io_mmio_resp_bits_rdata(mmio_if.resp_bits_rdata),
 
-            .victim_way_mask(victim_way_mask));
+            .victim_way_mask_valid(mif.victim_way_mask_valid),
+            .victim_way_mask(mif.victim_way_mask));
 
 initial begin
     run_test("cache_case0");
@@ -103,24 +106,14 @@ initial begin
  end
 
  initial begin
-    io_flush = 2'b00;
     rst = 1'b1;
     #200;
     rst = 1'b0;
  end
 
- /*
  initial begin
-   forever begin
-      #100
-      if (mem_if.req_valid) begin
-         $display("victim_way_mask = %b", victim_way_mask);
-      end
-   end
- end
- */
+   io_flush = 2'b00;
 
- initial begin
    mem_if.req_ready <= 1'b1;
    mem_if.resp_valid <= 1'b0;
    mem_if.resp_bits_cmd <= 4'b0000;
@@ -157,6 +150,8 @@ initial begin
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.i_agt.drv", "bif", mem_if);
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.i_agt.mon", "bif", mem_if);
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.o_agt.mon", "bif", mem_if);
+
+    uvm_config_db#(virtual mask_if)::set(null, "uvm_test_top.env.refmodel", "mif", mif);
  end
 
 endmodule

@@ -21,7 +21,7 @@ class top_env extends uvm_env;
 
         i_env = in_env::type_id::create("i_env", this);
         m_env = mem_env::type_id::create("m_env", this);
-        refmodel = cache_model::type_id::create("cache_model", this);
+        refmodel = cache_model::type_id::create("refmodel", this);
 
         i_agt_model_fifo = new("i_agt_model_fifo", this);
         i_model_scb_fifo = new("i_model_scb_fifo", this);
