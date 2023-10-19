@@ -2835,7 +2835,7 @@ module Cache(
   assign arb_io_in_1_bits_wdata = io_in_req_bits_wdata; // @[Cache.scala 494:28]
   assign arb_io_in_1_bits_user = io_in_req_bits_user; // @[Cache.scala 494:28]
   assign arb_io_out_ready = s1_io_in_ready; // @[Cache.scala 496:12]
-  assign victim_way_mask_valid = s1_io_out_valid; // Interface for uvm reference model
+  assign victim_way_mask_valid = s2_io_out_valid; // Interface for uvm reference model
   always @(posedge clock) begin
     if (reset) begin // @[Pipeline.scala 24:24]
       valid <= 1'h0; // @[Pipeline.scala 24:24]

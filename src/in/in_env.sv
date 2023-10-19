@@ -34,7 +34,7 @@ endclass
 function void in_env::connect_phase(uvm_phase phase);
     super.connect_phase(phase);
 
-    i_agt.ap.connect(agt_scb_fifo.analysis_export);
+    o_agt.ap.connect(agt_scb_fifo.analysis_export);
     scb.act_port.connect(agt_scb_fifo.blocking_get_export);
 endfunction
 

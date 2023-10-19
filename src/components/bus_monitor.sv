@@ -54,7 +54,7 @@ task bus_monitor::collect_one_pkt(bus_seq_item tr);
         tr.req_bits_wdata = bif.req_bits_wdata;
         tr.req_bits_user = bif.req_bits_user;
         `uvm_info("bus_monitor",
-            $sformatf("%s : monitor req", get_full_name()), UVM_LOW)
+            $sformatf("%s : monitor req", get_full_name()), UVM_FULL)
     end
     else begin
         while (1) begin
@@ -67,7 +67,7 @@ task bus_monitor::collect_one_pkt(bus_seq_item tr);
         tr.resp_bits_rdata = bif.resp_bits_rdata;
         tr.resp_bits_user = bif.resp_bits_user;
         `uvm_info("bus_monitor",
-            $sformatf("%s : monitor resp", get_full_name()), UVM_LOW)
+            $sformatf("%s : monitor resp", get_full_name()), UVM_FULL)
     end
 endtask
 

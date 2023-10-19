@@ -3,6 +3,7 @@
 `include "uvm_pkg.sv"
 import uvm_pkg::*;
 
+`include "src/utils.sv"
 `include "src/simplebus_if.sv"
 `include "src/mask_if.sv"
 `include "src/bus_seq_item.sv"

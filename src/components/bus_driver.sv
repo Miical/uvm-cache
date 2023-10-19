@@ -62,7 +62,7 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
             tr.req_bits_wdata,
             tr.req_bits_user);
         `uvm_info("bus_driver",
-            $sformatf("%s : put req successfully", get_full_name()), UVM_LOW)
+            $sformatf("%s : put req successfully", get_full_name()), UVM_FULL)
     end
     else begin
         bif.put_resp(
@@ -70,7 +70,7 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
             tr.resp_bits_rdata,
             tr.resp_bits_user);
         `uvm_info("bus_driver",
-            $sformatf("%s : put resp successfully", get_full_name()), UVM_LOW)
+            $sformatf("%s : put resp successfully", get_full_name()), UVM_FULL)
     end
 endtask
 

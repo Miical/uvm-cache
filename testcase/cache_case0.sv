@@ -3,7 +3,7 @@
 class case0_sequence extends uvm_sequence #(bus_seq_item);
     bus_seq_item tr;
 
-    function  new(string name= "case0_sequence");
+    function new(string name= "case0_sequence");
         super.new(name);
     endfunction
 
@@ -11,12 +11,11 @@ class case0_sequence extends uvm_sequence #(bus_seq_item);
         if(starting_phase != null)
             starting_phase.raise_objection(this);
 
-        `uvm_info("seq", "case0_sequence run", UVM_MEDIUM)
         repeat (50) begin
-            `uvm_do_with(tr, { is_req == 1; req_bits_cmd == 4'b0001; })
-            `uvm_info("in_seq", "send transaction", UVM_MEDIUM)
+            `uvm_do_with(tr, { is_req == 1; req_bits_cmd == 4'b0000; })
+            `uvm_info("in_seq", "send transaction", UVM_HIGH)
             get_response(rsp);
-            `uvm_info("in_seq", "get response", UVM_MEDIUM)
+            `uvm_info("in_seq", "get response", UVM_HIGH)
         end
 
         #100;
