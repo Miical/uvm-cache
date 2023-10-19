@@ -7,6 +7,8 @@ class cache_model extends uvm_component;
    uvm_analysis_port #(bus_seq_item)      in_ap;
    uvm_blocking_get_port #(bus_seq_item)  mem_port;
    uvm_analysis_port #(bus_seq_item)      mem_ap;
+   uvm_blocking_get_port #(bus_seq_item)  mmio_port;
+   uvm_analysis_port #(bus_seq_item)      mmio_ap;
 
    virtual mask_if mif;
 
@@ -20,7 +22,7 @@ class cache_model extends uvm_component;
    extern virtual task main_phase(uvm_phase phase);
 
    task reset();
-      for (int i = 0; i < 128; i++) begin
+      for (int i = 0; i < 1024; i++) begin
          for (int j = 0; j < 4; j++) begin
             cache_valid[i][j] = 1'b0;
             cache_dirty[i][j] = 1'b0;
@@ -104,6 +106,8 @@ function void cache_model::build_phase(uvm_phase phase);
    in_ap = new("in_ap", this);
    mem_port = new("mem_port", this);
    mem_ap = new("mem_ap", this);
+   mmio_port = new("mmio_port", this);
+   mmio_ap = new("mmio_ap", this);
 endfunction
 
 task cache_model::main_phase(uvm_phase phase);
@@ -124,10 +128,24 @@ task cache_model::main_phase(uvm_phase phase);
       req_tag = req.req_bits_addr[31:13];
       req_setid = req.req_bits_addr[12:3];
 
+      // mmio
+      if (4'h3 <= req.req_bits_addr[31:28] && req.req_bits_addr[31:28] <= 4'h7)
+      begin
+         mmio_ap.write(req);
+         `uvm_info("cache_model", "send req to mmio", UVM_HIGH)
+         mmio_port.get(resp);
+         `uvm_info("cache_model", "get resp from mmio", UVM_HIGH)
+         resp.resp_bits_user = req.req_bits_user;
+         in_ap.write(resp);
+         `uvm_info("cache_model", "send resp", UVM_HIGH)
+         continue;
+      end
+
       // check whether hit or not
       hit_id = -1;
       for (int i = 0; i < 4; i++) begin
-         if (cache_valid[req_setid][i] && cache_tag[req_setid][i] == req_tag) begin
+         if (cache_valid[req_setid][i] && cache_tag[req_setid][i] == req_tag)
+         begin
             hit_id = i;
             break;
          end

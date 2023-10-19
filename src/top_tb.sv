@@ -16,6 +16,7 @@ import uvm_pkg::*;
 `include "src/mem/mem_seq.sv"
 `include "src/mem/mem_scoreboard.sv"
 `include "src/mem/mem_env.sv"
+// `include "src/mmio/mmio_seq.sv"
 `include "src/components/cache_model.sv"
 `include "src/components/top_env.sv"
 
@@ -120,7 +121,7 @@ initial begin
    mem_if.resp_bits_cmd <= 4'b0000;
    mem_if.resp_bits_rdata <= 64'h0000000000000000;
 
-   mmio_if.req_ready <= 1'b0;
+   mmio_if.req_ready <= 1'b1;
    mmio_if.resp_valid <= 1'b0;
    mmio_if.resp_bits_cmd <= 4'b0000;
    mmio_if.resp_bits_rdata <= 64'h0000000000000000;
@@ -151,6 +152,10 @@ initial begin
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.i_agt.drv", "bif", mem_if);
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.i_agt.mon", "bif", mem_if);
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.m_env.o_agt.mon", "bif", mem_if);
+
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.mmio_env.i_agt.drv", "bif", mmio_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.mmio_env.i_agt.mon", "bif", mmio_if);
+    uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.mmio_env.o_agt.mon", "bif", mmio_if);
 
     uvm_config_db#(virtual mask_if)::set(null, "uvm_test_top.env.refmodel", "mif", mif);
  end

@@ -40,13 +40,6 @@ class bus_seq_item extends uvm_sequence_item;
     function new(string name = "bus_seq_item");
         super.new();
     endfunction
-
-    constraint default_cons {
-        req_bits_addr[12:0] == 13'b0;
-        req_bits_addr >= 32'h80000000;
-        req_bits_addr <  32'h80010000;
-    }
-
 endclass
 
 `endif
