@@ -11,8 +11,12 @@ class case0_sequence extends uvm_sequence #(bus_seq_item);
         if(starting_phase != null)
             starting_phase.raise_objection(this);
 
-        for (int i = 0; i < 100000; i++) begin
-            `uvm_do_with(tr, { tr_type == bus_seq_item::REQ; req_bits_cmd == 4'b0000;})
+        for (int i = 0; i < 10000; i++) begin
+            `uvm_do_with(tr, {
+                tr_type == bus_seq_item::REQ;
+                req_bits_cmd == 4'b0001;
+                req_bits_addr[11:0] == 12'b0;
+            })
             `uvm_info("in_seq", "send transaction", UVM_HIGH)
             get_response(rsp);
             `uvm_info("in_seq", "get response", UVM_HIGH)

@@ -90,8 +90,8 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
                 break;
             end
         end
-        @(posedge clk);
-        resp_valid <= 1'b0;
+        @(posedge clk)
+            resp_valid <= 1'b0;
     endtask
 
     task print();

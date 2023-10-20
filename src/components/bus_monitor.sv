@@ -74,7 +74,7 @@ task bus_monitor::collect_one_pkt(bus_seq_item tr);
             $sformatf("%s : monitor resp", get_full_name()), UVM_HIGH)
         ap.write(tr);
 
-        if (tr_type == bus_seq_item::MEM_RESP) begin
+        if (tr.resp_bits_cmd == 4'b0000 && tr_type == bus_seq_item::MEM_RESP) begin
             mtr = new("mtr");
             mtr.tr_type = bus_seq_item::MEM_RESP;
             mtr.mem_resp_rdata[0] = bif.resp_bits_rdata;

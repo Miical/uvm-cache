@@ -54,7 +54,7 @@ task bus_driver::main_phase(uvm_phase phase);
 endtask
 
 task bus_driver::drive_one_pkt(bus_seq_item tr);
-    if (tr_type == bus_seq_item::REQ) begin
+    if (tr.tr_type == bus_seq_item::REQ) begin
         bif.put_req(
             tr.req_bits_addr,
             tr.req_bits_size,
@@ -65,7 +65,7 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
         `uvm_info("bus_driver",
             $sformatf("%s : put req successfully", get_full_name()), UVM_HIGH)
     end
-    else if (tr_type == bus_seq_item::RESP) begin
+    else if (tr.tr_type == bus_seq_item::RESP) begin
         bif.put_resp(
             tr.resp_bits_cmd,
             tr.resp_bits_rdata,
@@ -73,7 +73,7 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
         `uvm_info("bus_driver",
             $sformatf("%s : put resp successfully", get_full_name()), UVM_HIGH)
     end
-    else if (tr_type == bus_seq_item::MEM_RESP) begin
+    else if (tr.tr_type == bus_seq_item::MEM_RESP) begin
         bif.put_mem_resp(
             tr.mem_resp_rdata,
             tr.req_bits_addr);

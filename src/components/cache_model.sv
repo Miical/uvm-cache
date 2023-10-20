@@ -34,37 +34,30 @@ class cache_model extends uvm_component;
    endtask
 
    task write_back(int setid, int wayid);
-      /*
       bus_seq_item req = new("req");
       bus_seq_item resp;
       req.tr_type = bus_seq_item::REQ;
-      req.req_bits_addr[2:0] = 3'b0;
-      req.req_bits_addr[12:3] = setid;
+      req.req_bits_addr[5:0] = 6'b0;
+      req.req_bits_addr[12:6] = setid;
       req.req_bits_addr[31:13] = cache_tag[setid][wayid];
-      req.req_bits_size = 3'b011;
       req.req_bits_cmd = 4'b0011;
+      req.req_bits_size = 3'b011;
       req.req_bits_wmask = 8'hff;
-      req.req_bits_wdata = cache_data[setid][wayid];
-      mem_ap.write(req);
-      `uvm_info("cache_model", "write_back req", UVM_HIGH)
 
-      mem_port.get(resp);
-      `uvm_info("cache_model", "write_back resp", UVM_HIGH)
-      assert(resp.resp_bits_cmd == 4'b0101);
-      cache_dirty[setid][wayid] = 1'b0;
-
-      // ------ nut_cache write 8 times ------
-      req.req_bits_wdata = 64'b0;
-      for (int i = 0; i < 6; i++) begin
+      for (int i = 0; i < 7; i++) begin
+         req.req_bits_wdata = cache_data[setid][wayid][i];
          mem_ap.write(req);
          mem_port.get(resp);
+         assert(resp.resp_bits_cmd == 4'b0101);
       end
-
       req.req_bits_cmd = 4'b0111;
+      req.req_bits_wdata = cache_data[setid][wayid][7];
       mem_ap.write(req);
       mem_port.get(resp);
-      // -------------------------------------
-      */
+      assert(resp.resp_bits_cmd == 4'b0101);
+
+      cache_valid[setid][wayid] = 1'b0;
+      `uvm_info("cache_model", "write_back", UVM_HIGH)
    endtask
 
    task fetch(bit [31:0] addr, int wayid, int wordid);
@@ -214,9 +207,9 @@ task cache_model::main_phase(uvm_phase phase);
       if (need_refill) begin
          int pkt_id = get_packet_id(req.req_bits_addr);
          mem_port.get(mem_resp);
-         for (int i = 0; i < 8; i++) begin
-            cache_data[req_setid][hit_id][pkt_id] = mem_resp.mem_resp_rdata[i];
+         for (int i = 1; i < 8; i++) begin
             pkt_id = (pkt_id + 1) % 8;
+            cache_data[req_setid][hit_id][pkt_id] = mem_resp.mem_resp_rdata[i];
          end
          `uvm_info("cache_model", "refill down", UVM_HIGH)
       end
