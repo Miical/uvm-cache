@@ -22,6 +22,15 @@ class top_env extends uvm_env;
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
+        uvm_config_db#(uvm_object_wrapper)::set(this,
+                                                "m_env.i_agt.sqr.main_phase",
+                                                "default_sequence",
+                                                mem_seq::type_id::get());
+        uvm_config_db#(uvm_object_wrapper)::set(this,
+                                                "mmio_env.i_agt.sqr.main_phase",
+                                                "default_sequence",
+                                                mmio_seq::type_id::get());
+
         i_env = in_env::type_id::create("i_env", this);
         m_env = mem_env::type_id::create("m_env", this);
         mmio_env = mem_env::type_id::create("mmio_env", this);
@@ -33,6 +42,9 @@ class top_env extends uvm_env;
         m_model_scb_fifo = new("m_model_scb_fifo", this);
         mmio_agt_model_fifo = new("mmio_agt_model_fifo", this);
         mmio_model_scb_fifo = new("mmio_model_scb_fifo", this);
+
+        m_env.resp_type = bus_seq_item::MEM_RESP;
+        mmio_env.resp_type = bus_seq_item::RESP;
     endfunction
 
     extern virtual function void connect_phase(uvm_phase phase);

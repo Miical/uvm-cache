@@ -18,4 +18,8 @@ function int mask2index(bit [3:0] mask);
     return -1;
 endfunction
 
+function int get_packet_id(bit [31:0] addr);
+    return (addr >> 3) & ((1 << 3) - 1);
+endfunction
+
 `endif

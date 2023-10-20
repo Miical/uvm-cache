@@ -12,30 +12,32 @@ class cache_model extends uvm_component;
 
    virtual mask_if mif;
 
-   reg        cache_valid[0:1023][0:3];
-   reg        cache_dirty[0:1023][0:3];
-   reg [18:0] cache_tag[0:1023][0:3];
-   reg [63:0] cache_data[0:1023][0:3];
+   reg        cache_valid[128][4];
+   reg        cache_dirty[128][4];
+   reg [18:0] cache_tag[128][4];
+   reg [63:0] cache_data[128][4][8];
 
    extern function new(string name, uvm_component parent);
    extern function void build_phase(uvm_phase phase);
    extern virtual task main_phase(uvm_phase phase);
 
    task reset();
-      for (int i = 0; i < 1024; i++) begin
+      for (int i = 0; i < 128; i++) begin
          for (int j = 0; j < 4; j++) begin
             cache_valid[i][j] = 1'b0;
             cache_dirty[i][j] = 1'b0;
             cache_tag[i][j]   = 19'b0;
-            cache_data[i][j]  = 64'b0;
+            for (int k = 0; k < 8; k++)
+               cache_data[i][j][k] = 64'b0;
          end
       end
    endtask
 
    task write_back(int setid, int wayid);
+      /*
       bus_seq_item req = new("req");
       bus_seq_item resp;
-      req.is_req = 1'b1;
+      req.tr_type = bus_seq_item::REQ;
       req.req_bits_addr[2:0] = 3'b0;
       req.req_bits_addr[12:3] = setid;
       req.req_bits_addr[31:13] = cache_tag[setid][wayid];
@@ -62,15 +64,16 @@ class cache_model extends uvm_component;
       mem_ap.write(req);
       mem_port.get(resp);
       // -------------------------------------
+      */
    endtask
 
-   task fetch(bit [31:0] addr, int wayid);
+   task fetch(bit [31:0] addr, int wayid, int wordid);
       bit [18:0] tag = addr[31:13];
-      bit [9:0]  setid = addr[12:3];
+      bit [9:0]  setid = addr[12:6];
 
       bus_seq_item req = new("req");
       bus_seq_item resp;
-      req.is_req = 1'b1;
+      req.tr_type = bus_seq_item::REQ;
       req.req_bits_addr[31:3] = addr[31:3];
       req.req_bits_addr[2:0] = 3'b0;
       req.req_bits_size = 3'b011;
@@ -78,16 +81,16 @@ class cache_model extends uvm_component;
       req.req_bits_wmask = 8'b0;
       req.req_bits_wdata = 64'b0;
       mem_ap.write(req);
-      `uvm_info("cache_model", "fetch req", UVM_HIGH)
+      `uvm_info("cache_model", "[fetch] send req", UVM_HIGH)
 
       mem_port.get(resp);
-      `uvm_info("cache_model", "fetch resp", UVM_HIGH)
-      assert(resp.resp_bits_cmd == 4'b0110);
+      `uvm_info("cache_model", "[fetch] get resp", UVM_HIGH)
+      assert(resp.resp_bits_cmd == 4'b0000);
 
       cache_valid[setid][wayid] = 1'b1;
       cache_dirty[setid][wayid] = 1'b0;
       cache_tag[setid][wayid] = tag;
-      cache_data[setid][wayid] = resp.resp_bits_rdata;
+      cache_data[setid][wayid][wordid] = resp.resp_bits_rdata;
    endtask
 
    `uvm_component_utils(cache_model)
@@ -116,17 +119,21 @@ task cache_model::main_phase(uvm_phase phase);
 
    while(1) begin
       bit [18:0] req_tag;
-      bit [9:0] req_setid;
+      bit [6:0] req_setid;
+      bit [2:0] req_wordid;
       bit [63:0] bitsmask;
       int hit_id;
+      bit need_refill;
       bus_seq_item req;
       bus_seq_item resp;
+      bus_seq_item mem_resp;
 
       // get resquest
       in_port.get(req);
       `uvm_info("cache_model", "get req", UVM_HIGH)
       req_tag = req.req_bits_addr[31:13];
-      req_setid = req.req_bits_addr[12:3];
+      req_setid = req.req_bits_addr[12:6];
+      req_wordid = req.req_bits_addr[5:3];
 
       // mmio
       if (4'h3 <= req.req_bits_addr[31:28] && req.req_bits_addr[31:28] <= 4'h7)
@@ -143,6 +150,7 @@ task cache_model::main_phase(uvm_phase phase);
 
       // check whether hit or not
       hit_id = -1;
+      need_refill = 0;
       for (int i = 0; i < 4; i++) begin
          if (cache_valid[req_setid][i] && cache_tag[req_setid][i] == req_tag)
          begin
@@ -171,7 +179,8 @@ task cache_model::main_phase(uvm_phase phase);
          end
 
          // fetch data
-         fetch(req.req_bits_addr, victim_id);
+         fetch(req.req_bits_addr, victim_id, req_wordid);
+         need_refill = 1;
          hit_id = victim_id;
       end
 
@@ -180,18 +189,18 @@ task cache_model::main_phase(uvm_phase phase);
             || req.req_bits_cmd == 4'b0111) begin
           cache_dirty[req_setid][hit_id] = 1'b1;
           bitsmask = bytesmask2bitsmask(req.req_bits_wmask);
-          cache_data[req_setid][hit_id] =
-            (cache_data[req_setid][hit_id] & ~bitsmask)
+          cache_data[req_setid][hit_id][req_wordid] =
+            (cache_data[req_setid][hit_id][req_wordid] & ~bitsmask)
             | (req.req_bits_wdata & bitsmask);
       end
 
       // send respond
       resp = new("resp");
-      resp.is_req = 1'b0;
+      resp.tr_type = bus_seq_item::RESP;
       if (req.req_bits_cmd == 4'b0000 || req.req_bits_cmd == 4'b0010) begin
          resp.resp_bits_user  = req.req_bits_user;
          resp.resp_bits_cmd   = 4'b0110;
-         resp.resp_bits_rdata = cache_data[req_setid][hit_id];
+         resp.resp_bits_rdata = cache_data[req_setid][hit_id][req_wordid];
       end
       else begin
          resp.resp_bits_user  = req.req_bits_user;
@@ -200,6 +209,17 @@ task cache_model::main_phase(uvm_phase phase);
       end
       in_ap.write(resp);
       `uvm_info("cache_model", "send resp", UVM_HIGH)
+
+      // refill
+      if (need_refill) begin
+         int pkt_id = get_packet_id(req.req_bits_addr);
+         mem_port.get(mem_resp);
+         for (int i = 0; i < 8; i++) begin
+            cache_data[req_setid][hit_id][pkt_id] = mem_resp.mem_resp_rdata[i];
+            pkt_id = (pkt_id + 1) % 8;
+         end
+         `uvm_info("cache_model", "refill down", UVM_HIGH)
+      end
    end
 endtask
 `endif

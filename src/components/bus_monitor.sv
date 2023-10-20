@@ -5,7 +5,7 @@ class bus_monitor extends uvm_monitor;
 
     virtual simplebus_if bif;
 
-    int is_req;
+    bus_seq_item::Type tr_type;
 
     uvm_analysis_port #(bus_seq_item) ap;
 
@@ -28,19 +28,22 @@ endclass
 task bus_monitor::main_phase(uvm_phase phase);
     bus_seq_item tr;
     tr = new("tr");
-    tr.is_req = is_req;
+    if (tr_type == bus_seq_item::REQ)
+        tr.tr_type = bus_seq_item::REQ;
+    else
+        tr.tr_type = bus_seq_item::RESP;
 
-    while(top_tb.rst)
-        @(posedge top_tb.clk);
+    while (bif.rst)
+        @(posedge bif.clk);
 
     while(1) begin
         collect_one_pkt(tr);
-        ap.write(tr);
     end
 endtask
 
 task bus_monitor::collect_one_pkt(bus_seq_item tr);
-    if (is_req) begin
+    bus_seq_item mtr;
+    if (tr_type == bus_seq_item::REQ) begin
         while (1) begin
             @(posedge bif.clk)
                 if (!bif.req_valid) break;
@@ -54,7 +57,8 @@ task bus_monitor::collect_one_pkt(bus_seq_item tr);
         tr.req_bits_wdata = bif.req_bits_wdata;
         tr.req_bits_user = bif.req_bits_user;
         `uvm_info("bus_monitor",
-            $sformatf("%s : monitor req", get_full_name()), UVM_FULL)
+            $sformatf("%s : monitor req", get_full_name()), UVM_HIGH)
+        ap.write(tr);
     end
     else begin
         while (1) begin
@@ -67,7 +71,19 @@ task bus_monitor::collect_one_pkt(bus_seq_item tr);
         tr.resp_bits_rdata = bif.resp_bits_rdata;
         tr.resp_bits_user = bif.resp_bits_user;
         `uvm_info("bus_monitor",
-            $sformatf("%s : monitor resp", get_full_name()), UVM_FULL)
+            $sformatf("%s : monitor resp", get_full_name()), UVM_HIGH)
+        ap.write(tr);
+
+        if (tr_type == bus_seq_item::MEM_RESP) begin
+            mtr = new("mtr");
+            mtr.tr_type = bus_seq_item::MEM_RESP;
+            mtr.mem_resp_rdata[0] = bif.resp_bits_rdata;
+            for (int i = 1; i < 8; i++) begin
+                @(posedge bif.clk);
+                mtr.mem_resp_rdata[i] = bif.resp_bits_rdata;
+            end
+            ap.write(mtr);
+        end
     end
 endtask
 

@@ -6,7 +6,7 @@ class bus_agent extends uvm_agent;
     bus_driver drv;
     bus_monitor mon;
 
-    int is_req;
+    bus_seq_item::Type tr_type;
 
     uvm_analysis_port #(bus_seq_item) ap;
 
@@ -25,10 +25,10 @@ function void bus_agent::build_phase(uvm_phase phase);
     if (is_active == UVM_ACTIVE) begin
        sqr = bus_sequencer::type_id::create("sqr", this);
        drv = bus_driver::type_id::create("drv", this);
-       drv.is_req = is_req;
+       drv.tr_type = tr_type;
     end
     mon = bus_monitor::type_id::create("mon", this);
-    mon.is_req = is_req;
+    mon.tr_type = tr_type;
  endfunction
 
  function void bus_agent::connect_phase(uvm_phase phase);

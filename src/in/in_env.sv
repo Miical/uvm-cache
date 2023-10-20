@@ -18,8 +18,8 @@ class in_env extends uvm_env;
         o_agt = bus_agent::type_id::create("o_agt", this);
         i_agt.is_active = UVM_ACTIVE;
         o_agt.is_active = UVM_PASSIVE;
-        i_agt.is_req = 1;
-        o_agt.is_req = 0;
+        i_agt.tr_type = bus_seq_item::REQ;
+        o_agt.tr_type = bus_seq_item::RESP;
 
         scb = in_scoreboard::type_id::create("scb", this);
 

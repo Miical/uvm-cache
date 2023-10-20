@@ -55,9 +55,9 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
         end
     endtask
 
-    task put_resp(input [3:0] cmd,
+    task put_resp(input [3:0]  cmd,
                   input [63:0] rdata,
-                  input  [15:0] user);
+                  input [15:0] user);
         while (1) begin
             @(posedge clk)
             if (resp_ready) begin
@@ -70,6 +70,28 @@ interface simplebus_if(input clk, input rst, input[1:0] io_flush, input io_empty
         end
         @(posedge clk)
             resp_valid <= 1'b0;
+    endtask
+
+    task put_mem_resp(input [63:0] rdata[8], input [31:0] req_addr);
+        int pkt_id;
+        pkt_id = get_packet_id(req_addr);
+        while (1) begin
+            @(posedge clk)
+            if (resp_ready) begin
+                resp_valid <= 1'b1;
+                resp_bits_cmd <= 4'b0000;
+                for (int i = 0; i < 7; i++) begin
+                    resp_bits_rdata <= rdata[pkt_id];
+                    pkt_id <= (pkt_id + 1) % 8;
+                    @(posedge clk);
+                end
+                resp_bits_cmd <= 4'b0110;
+                resp_bits_rdata <= rdata[pkt_id];
+                break;
+            end
+        end
+        @(posedge clk);
+        resp_valid <= 1'b0;
     endtask
 
     task print();

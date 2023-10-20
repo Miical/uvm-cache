@@ -16,7 +16,7 @@ import uvm_pkg::*;
 `include "src/mem/mem_seq.sv"
 `include "src/mem/mem_scoreboard.sv"
 `include "src/mem/mem_env.sv"
-// `include "src/mmio/mmio_seq.sv"
+`include "src/mmio/mmio_seq.sv"
 `include "src/components/cache_model.sv"
 `include "src/components/top_env.sv"
 
