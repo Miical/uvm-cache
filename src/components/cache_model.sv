@@ -131,8 +131,8 @@ task cache_model::main_phase(uvm_phase phase);
       req_setid = req.req_bits_addr[12:6];
       req_wordid = req.req_bits_addr[5:3];
 
-      // reset / flush
-      if (req.rst || req.io_flush) begin
+      // reset
+      if (req.rst) begin
          reset();
          continue;
       end

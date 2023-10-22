@@ -70,10 +70,8 @@ task bus_driver::drive_one_pkt(bus_seq_item tr);
         end
         else if (tr.io_flush) begin
             cif.io_flush <= tr.io_flush;
-            bif.req_valid <= 1'b1;
             @(posedge bif.clk);
             cif.io_flush <= 2'b00;
-            bif.req_valid <= 1'b0;
         end
         else
             bif.put_req(

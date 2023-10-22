@@ -95,7 +95,7 @@ Cache cache(.clock(clk),
             .victim_way_mask(mif.victim_way_mask));
 
 initial begin
-    run_test("cache_case0");
+    run_test();
     $finish();
 end
 
