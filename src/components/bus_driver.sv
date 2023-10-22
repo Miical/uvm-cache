@@ -4,6 +4,7 @@
 class bus_driver extends uvm_driver#(bus_seq_item);
 
     virtual simplebus_if bif;
+    virtual cache_if cif;
 
     bus_seq_item::Type tr_type;
 
@@ -15,6 +16,9 @@ class bus_driver extends uvm_driver#(bus_seq_item);
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         if (!uvm_config_db#(virtual simplebus_if)::get(this, "", "bif", bif))
+            `uvm_fatal("bus_driver", "No virtual interface set up.")
+        if (tr_type == bus_seq_item::REQ
+            && !uvm_config_db#(virtual cache_if)::get(this, "", "cif", cif))
             `uvm_fatal("bus_driver", "No virtual interface set up.")
     endfunction
 
@@ -43,25 +47,42 @@ task bus_driver::main_phase(uvm_phase phase);
         seq_item_port.get_next_item(req);
         drive_one_pkt(req);
 
-        rsp = new("rsp");
-        rsp.tr_type = tr_type;
-        rsp.set_id_info(req);
-        get_response(rsp);
+        if (req.tr_type != bus_seq_item::REQ || (!req.io_flush && !req.rst)) begin
+            rsp = new("rsp");
+            rsp.tr_type = tr_type;
+            rsp.set_id_info(req);
+            get_response(rsp);
+            seq_item_port.put_response(rsp);
+        end
 
-        seq_item_port.put_response(rsp);
         seq_item_port.item_done();
     end
 endtask
 
 task bus_driver::drive_one_pkt(bus_seq_item tr);
     if (tr.tr_type == bus_seq_item::REQ) begin
-        bif.put_req(
-            tr.req_bits_addr,
-            tr.req_bits_size,
-            tr.req_bits_cmd,
-            tr.req_bits_wmask,
-            tr.req_bits_wdata,
-            tr.req_bits_user);
+        if (tr.rst) begin
+            cif.rst <= 1'b1;
+            bif.req_valid <= 1'b1;
+            @(posedge bif.clk);
+            cif.rst <= 1'b0;
+            bif.req_valid <= 1'b0;
+        end
+        else if (tr.io_flush) begin
+            cif.io_flush <= tr.io_flush;
+            bif.req_valid <= 1'b1;
+            @(posedge bif.clk);
+            cif.io_flush <= 2'b00;
+            bif.req_valid <= 1'b0;
+        end
+        else
+            bif.put_req(
+                tr.req_bits_addr,
+                tr.req_bits_size,
+                tr.req_bits_cmd,
+                tr.req_bits_wmask,
+                tr.req_bits_wdata,
+                tr.req_bits_user);
         `uvm_info("bus_driver",
             $sformatf("%s : put req successfully", get_full_name()), UVM_HIGH)
     end

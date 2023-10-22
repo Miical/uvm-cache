@@ -49,6 +49,7 @@ task bus_monitor::collect_one_pkt(bus_seq_item tr);
                 if (!bif.req_valid) break;
         end
         bif.get_req();
+        tr.rst = bif.rst;
         tr.io_flush = bif.io_flush;
         tr.req_bits_addr = bif.req_bits_addr;
         tr.req_bits_size = bif.req_bits_size;

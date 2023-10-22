@@ -12,6 +12,7 @@ class cache_model extends uvm_component;
 
    virtual mask_if mif;
 
+   reg        cache_empty;
    reg        cache_valid[128][4];
    reg        cache_dirty[128][4];
    reg [18:0] cache_tag[128][4];
@@ -31,6 +32,7 @@ class cache_model extends uvm_component;
                cache_data[i][j][k] = 64'b0;
          end
       end
+      cache_empty = 1'b0;
    endtask
 
    task write_back(int setid, int wayid);
@@ -80,6 +82,7 @@ class cache_model extends uvm_component;
       `uvm_info("cache_model", "[fetch] get resp", UVM_HIGH)
       assert(resp.resp_bits_cmd == 4'b0000);
 
+      cache_empty = 1'b0;
       cache_valid[setid][wayid] = 1'b1;
       cache_dirty[setid][wayid] = 1'b0;
       cache_tag[setid][wayid] = tag;
@@ -127,6 +130,12 @@ task cache_model::main_phase(uvm_phase phase);
       req_tag = req.req_bits_addr[31:13];
       req_setid = req.req_bits_addr[12:6];
       req_wordid = req.req_bits_addr[5:3];
+
+      // reset / flush
+      if (req.rst || req.io_flush) begin
+         reset();
+         continue;
+      end
 
       // mmio
       if (4'h3 <= req.req_bits_addr[31:28] && req.req_bits_addr[31:28] <= 4'h7)
@@ -190,13 +199,13 @@ task cache_model::main_phase(uvm_phase phase);
       // send respond
       resp = new("resp");
       resp.tr_type = bus_seq_item::RESP;
+      resp.resp_bits_user  = req.req_bits_user;
+      resp.io_empty = cache_empty;
       if (req.req_bits_cmd == 4'b0000 || req.req_bits_cmd == 4'b0010) begin
-         resp.resp_bits_user  = req.req_bits_user;
          resp.resp_bits_cmd   = 4'b0110;
          resp.resp_bits_rdata = cache_data[req_setid][hit_id][req_wordid];
       end
       else begin
-         resp.resp_bits_user  = req.req_bits_user;
          resp.resp_bits_cmd   = 4'b0101;
          resp.resp_bits_rdata = 64'b0;
       end

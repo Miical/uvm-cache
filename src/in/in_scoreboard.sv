@@ -25,6 +25,7 @@ endfunction
 
 function bit in_scoreboard::tr_compare(bus_seq_item a, bus_seq_item b);
     if (a.resp_bits_cmd != b.resp_bits_cmd) return 0;
+    if (a.io_empty != b.io_empty) return 0;
     if (a.resp_bits_user != b.resp_bits_user) return 0;
     if (a.resp_bits_cmd == 4'b0110) begin
         if (a.resp_bits_rdata != b.resp_bits_rdata) return 0;

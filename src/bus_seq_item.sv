@@ -4,6 +4,7 @@
 class bus_seq_item extends uvm_sequence_item;
     typedef enum { REQ, RESP, MEM_RESP } Type;
 
+    rand bit        rst;
     rand bit [1:0]  io_flush;
     rand bit        io_empty;
 
@@ -23,8 +24,9 @@ class bus_seq_item extends uvm_sequence_item;
 
     `uvm_object_utils_begin(bus_seq_item)
         if (tr_type == REQ) begin
+            `uvm_field_int(rst, UVM_ALL_ON)
+            `uvm_field_int(io_flush, UVM_ALL_ON)
             `uvm_field_int(req_bits_user, UVM_ALL_ON)
-            // `uvm_field_int(io_flush, UVM_ALL_ON)
             `uvm_field_int(req_bits_addr, UVM_ALL_ON)
             `uvm_field_int(req_bits_size, UVM_ALL_ON)
             `uvm_field_int(req_bits_cmd, UVM_ALL_ON)

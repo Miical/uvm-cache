@@ -4,8 +4,9 @@
 import uvm_pkg::*;
 
 `include "src/utils.sv"
-`include "src/simplebus_if.sv"
-`include "src/mask_if.sv"
+`include "src/interface/simplebus_if.sv"
+`include "src/interface/mask_if.sv"
+`include "src/interface/cache_if.sv"
 `include "src/bus_seq_item.sv"
 `include "src/components/bus_driver.sv"
 `include "src/components/bus_monitor.sv"
@@ -26,21 +27,19 @@ import uvm_pkg::*;
 module top_tb;
 
 reg       clk;
-reg       rst;
-reg [1:0] io_flush;
-reg       io_empty;
 
-simplebus_if in_if(clk, rst, io_flush, io_empty);
-simplebus_if mem_if(clk, rst, io_flush, io_empty);
-simplebus_if coh_if(clk, rst, io_flush, io_empty);
-simplebus_if mmio_if(clk, rst, io_flush, io_empty);
+mask_if mif(clk, cif.rst);
+cache_if cif(clk);
 
-mask_if mif(clk, rst);
+simplebus_if in_if(clk, cif.rst, cif.io_flush, cif.io_empty);
+simplebus_if mem_if(clk, cif.rst, cif.io_flush, cif.io_empty);
+simplebus_if coh_if(clk, cif.rst, cif.io_flush, cif.io_empty);
+simplebus_if mmio_if(clk, cif.rst, cif.io_flush, cif.io_empty);
 
 Cache cache(.clock(clk),
-            .reset(rst),
-            .io_flush(io_flush),
-            .io_empty(io_empty),
+            .reset(cif.rst),
+            .io_flush(cif.io_flush),
+            .io_empty(cif.io_empty),
 
             .io_in_req_ready(in_if.req_ready),
             .io_in_req_valid(in_if.req_valid),
@@ -108,13 +107,13 @@ initial begin
  end
 
  initial begin
-    rst = 1'b1;
+    cif.rst = 1'b1;
     #200;
-    rst = 1'b0;
+    cif.rst = 1'b0;
  end
 
  initial begin
-   io_flush = 2'b00;
+   cif.io_flush = 2'b00;
 
    mem_if.req_ready <= 1'b1;
    mem_if.resp_valid <= 1'b0;
@@ -158,6 +157,7 @@ initial begin
     uvm_config_db#(virtual simplebus_if)::set(null, "uvm_test_top.env.mmio_env.o_agt.mon", "bif", mmio_if);
 
     uvm_config_db#(virtual mask_if)::set(null, "uvm_test_top.env.refmodel", "mif", mif);
+    uvm_config_db#(virtual cache_if)::set(null, "uvm_test_top.env.i_env.i_agt.drv", "cif", cif);
  end
 
 endmodule
