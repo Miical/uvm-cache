@@ -157,6 +157,7 @@ task cache_model::main_phase(uvm_phase phase);
          if (cache_valid[req_setid][i] && cache_tag[req_setid][i] == req_tag)
          begin
             hit_id = i;
+            `uvm_info("cache_model hit", "cache hit.", UVM_MEDIUM)
             break;
          end
       end
@@ -165,6 +166,7 @@ task cache_model::main_phase(uvm_phase phase);
       if (hit_id == -1) begin
          // find victim
          int victim_id = -1;
+         `uvm_info("cache_model miss", "cache miss.", UVM_MEDIUM)
          for (int i = 3; i >= 0 ; i--) begin
             if (!cache_valid[req_setid][i]) begin
                victim_id = i;

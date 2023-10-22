@@ -50,10 +50,10 @@ task mem_scoreboard::main_phase(uvm_phase phase);
                 tmp_tran = expect_queue.pop_front();
                 result = tr_compare(get_actual, tmp_tran);
                 if(result) begin
-                    `uvm_info("mem_scoreboard", "Compare SUCCESSFULLY", UVM_MEDIUM);
+                    `uvm_info(get_full_name(), "Compare SUCCESSFULLY", UVM_MEDIUM);
                 end
                 else begin
-                    `uvm_error("mem_scoreboard", "Compare FAILED");
+                    `uvm_error(get_full_name(), "Compare FAILED");
                     $display("the expect pkt is");
                     tmp_tran.print();
                     $display("the actual pkt is");
@@ -61,7 +61,7 @@ task mem_scoreboard::main_phase(uvm_phase phase);
                 end
             end
             else begin
-                `uvm_error("mem_scoreboard", "Received from DUT, while Expect Queue is empty");
+                `uvm_error(get_full_name(), "Received from DUT, while Expect Queue is empty");
                 $display("the unexpected pkt is");
                 get_actual.print();
             end

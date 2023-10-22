@@ -22,7 +22,13 @@ import uvm_pkg::*;
 `include "src/components/top_env.sv"
 
 `include "../testcase/base_test.sv"
-`include "../testcase/cache_case0.sv"
+`include "../testcase/case0_read_once.sv"
+`include "../testcase/case1_read_memory.sv"
+`include "../testcase/case2_write_memory.sv"
+`include "../testcase/case3_readwrite_memory.sv"
+`include "../testcase/case4_mmio.sv"
+`include "../testcase/case5_reset.sv"
+`include "../testcase/case6_seq.sv"
 
 module top_tb;
 
