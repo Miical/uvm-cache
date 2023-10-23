@@ -4,7 +4,8 @@
 # TESTCASE = case3_readwrite_memory
 # TESTCASE = case4_mmio
 # TESTCASE = case5_reset
-TESTCASE = case6_seq
+# TESTCASE = case6_seq
+TESTCASE = case7_all
 VERBOSITY = UVM_MEDIUM
 
 # code coverage command

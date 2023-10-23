@@ -29,6 +29,7 @@ import uvm_pkg::*;
 `include "../testcase/case4_mmio.sv"
 `include "../testcase/case5_reset.sv"
 `include "../testcase/case6_seq.sv"
+`include "../testcase/case7_all.sv"
 
 module top_tb;
 
