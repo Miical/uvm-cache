@@ -20,14 +20,18 @@ SIMV_OPTS = +UVM_VERBOSITY=$(VERBOSITY) \
 		   $(CM) $(CM_NAME) $(CM_DIR) \
 		   +UVM_TESTNAME=$(TESTCASE)
 
-BUILD_SRC = dut/ src/ filelist.f
+BUILD_SRC = mcv-ut/build/NutShell/Cache.v src/ filelist.f
 
-.PHONY: clean comp run run_gui run_cli show_cov cov
+.PHONY: clean comp run run_gui run_cli show_cov cov init
 
 
 all: comp run
 cov: comp run show_cov
 gui: comp run_gui
+
+init:
+	git submodule update --init --recursive
+	cd mcv-ut/ && make init && make nt_cache
 
 comp:
 	rm -rf build/ && mkdir build && cp -r $(BUILD_SRC) build/

@@ -96,10 +96,7 @@ Cache cache(.clock(clk),
             .io_mmio_resp_ready(mmio_if.resp_ready),
             .io_mmio_resp_valid(mmio_if.resp_valid),
             .io_mmio_resp_bits_cmd(mmio_if.resp_bits_cmd),
-            .io_mmio_resp_bits_rdata(mmio_if.resp_bits_rdata),
-
-            .victim_way_mask_valid(mif.victim_way_mask_valid),
-            .victim_way_mask(mif.victim_way_mask));
+            .io_mmio_resp_bits_rdata(mmio_if.resp_bits_rdata));
 
 initial begin
     run_test();
@@ -120,6 +117,9 @@ initial begin
  end
 
  initial begin
+   assign mif.victim_way_mask_valid = cache.s2_io_out_valid;
+   assign mif.victim_way_mask = cache.s2.victimWaymask;
+
    cif.io_flush = 2'b00;
 
    mem_if.req_ready <= 1'b1;

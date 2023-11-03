@@ -13,9 +13,12 @@
 配置 `$UVM_HOME`
 
 ```shell
-# 编译运行
+git clone "https://gitee.com/Miical/uvm-cache"
+cd uvm-cache
+make init
 make
 
+# 其他选项
 # 编译并运行图形化界面
 make gui
 
